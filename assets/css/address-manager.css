@@ -1,0 +1,597 @@
+/* ==========================================================================
+   Multi-Address Management CSS (Shopee Style)
+   ========================================================================== */
+
+:root {
+    --shopee-orange: #ee4d2d;
+    --shopee-orange-light: #fff5f3;
+    --shopee-orange-border: #fcdad4;
+    --shopee-gray-bg: #f5f5f5;
+    --shopee-text-dark: #222222;
+    --shopee-text-muted: #757575;
+    --shopee-border: #e8e8e8;
+}
+
+/* 1. Checkout Top Address Card (111.jpg) */
+.checkout-address-card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 16px 18px;
+    border: 1px solid var(--shopee-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    position: relative;
+    overflow: hidden;
+}
+
+.checkout-address-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: repeating-linear-gradient(45deg, #ee4d2d, #ee4d2d 12px, #ffffff 12px, #ffffff 18px, #0088cc 18px, #0088cc 30px, #ffffff 30px, #ffffff 36px);
+}
+
+.checkout-address-card.empty-state {
+    background-color: #ffffff;
+    border: 1.5px dashed #dcdcdc;
+    padding: 16px 18px;
+}
+
+.checkout-address-card.empty-state::before {
+    display: none;
+}
+
+.checkout-address-card.empty-state:hover {
+    border-color: var(--shopee-orange);
+    background-color: #fffaf9;
+}
+
+.empty-pin-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: #f7f7f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #9e9e9e;
+    transition: all 0.2s ease;
+}
+
+.checkout-address-card.empty-state:hover .empty-pin-circle {
+    background-color: var(--shopee-orange-light);
+    color: var(--shopee-orange);
+}
+
+.checkout-address-card:hover {
+    border-color: #f3a898;
+    background-color: #fffdfd;
+}
+
+.checkout-address-card .pin-icon {
+    color: var(--shopee-orange);
+    font-size: 1.25rem;
+    margin-right: 12px;
+    margin-top: 3px;
+}
+
+.checkout-address-card .recipient-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--shopee-text-dark);
+}
+
+.checkout-address-card .recipient-phone {
+    font-size: 0.95rem;
+    color: var(--shopee-text-muted);
+    font-weight: normal;
+    margin-left: 6px;
+}
+
+.checkout-address-card .address-text {
+    font-size: 0.92rem;
+    color: #444444;
+    line-height: 1.45;
+    margin-top: 4px;
+}
+
+.checkout-address-card .chevron-icon {
+    color: #9e9e9e;
+    font-size: 1.1rem;
+}
+
+/* 2. Modal & Offcanvas General (Shopee Style) */
+.address-modal .modal-content,
+.address-offcanvas {
+    border-radius: 12px;
+    border: none;
+    background-color: #f8f9fa;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.address-modal-header {
+    background: #ffffff;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--shopee-border);
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.address-modal-header .btn-back {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--shopee-orange);
+    padding: 4px 8px;
+    margin-right: 8px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.address-modal-header .modal-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--shopee-text-dark);
+    margin: 0 auto;
+    transform: translateX(-15px);
+}
+
+.address-section-label {
+    background-color: #f5f5f5;
+    color: #777777;
+    font-size: 0.85rem;
+    padding: 10px 18px;
+    font-weight: 500;
+}
+
+/* 3. Address List Item (222.jpg) */
+.address-item-card {
+    background: #ffffff;
+    padding: 16px 18px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.address-item-card:hover {
+    background-color: #fafafa;
+}
+
+.shopee-radio-wrap {
+    margin-right: 14px;
+    margin-top: 3px;
+}
+
+.shopee-radio {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.shopee-radio.active {
+    border-color: var(--shopee-orange);
+}
+
+.shopee-radio.active::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--shopee-orange);
+}
+
+.address-item-content {
+    flex-grow: 1;
+}
+
+.address-item-content .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.address-item-content .name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--shopee-text-dark);
+}
+
+.address-item-content .phone {
+    font-size: 0.95rem;
+    color: #666;
+    margin-left: 6px;
+    font-weight: normal;
+}
+
+.address-item-content .detail {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.45;
+}
+
+.badge-default-addr {
+    display: inline-block;
+    color: var(--shopee-orange);
+    border: 1px solid var(--shopee-orange);
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 1px 7px;
+    border-radius: 3px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.badge-label-tag {
+    display: inline-block;
+    color: #555;
+    background: #f0f0f0;
+    font-size: 0.72rem;
+    padding: 1px 7px;
+    border-radius: 3px;
+    margin-top: 6px;
+    margin-left: 4px;
+}
+
+.btn-edit-addr {
+    color: #888888;
+    font-size: 0.92rem;
+    background: none;
+    border: none;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn-edit-addr:hover {
+    color: var(--shopee-orange);
+}
+
+/* Bottom Fixed Button (+ เพิ่มที่อยู่ใหม่) */
+.address-footer-actions {
+    background: #ffffff;
+    padding: 14px 18px;
+    border-top: 1px solid var(--shopee-border);
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+.btn-add-new-address {
+    background-color: #ffffff;
+    border: 1.5px solid var(--shopee-orange);
+    color: var(--shopee-orange);
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 12px;
+    border-radius: 6px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-add-new-address:hover {
+    background-color: var(--shopee-orange-light);
+    color: var(--shopee-orange);
+}
+
+/* 4. Add/Edit Address Form (333.jpg) */
+.smart-paste-box {
+    background-color: var(--shopee-orange-light);
+    border: 1px dashed var(--shopee-orange-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 16px 18px 0 18px;
+}
+
+.smart-paste-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--shopee-text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.smart-paste-title i {
+    color: var(--shopee-orange);
+    font-size: 1.05rem;
+}
+
+.smart-paste-desc {
+    font-size: 0.8rem;
+    color: #888888;
+    margin-bottom: 10px;
+}
+
+.smart-paste-textarea {
+    width: 100%;
+    border: 1px solid #e5c9c4;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+    color: #333;
+    background: #ffffff;
+    resize: none;
+    min-height: 72px;
+}
+
+.smart-paste-textarea:focus {
+    outline: none;
+    border-color: var(--shopee-orange);
+}
+
+.btn-smart-parse {
+    background-color: var(--shopee-orange);
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    padding: 6px 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-smart-parse:hover {
+    background-color: #d63d1e;
+}
+
+/* Form Container */
+.address-form-card {
+    background: #ffffff;
+    border-radius: 8px;
+    margin: 16px 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--shopee-border);
+}
+
+.address-form-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--shopee-text-dark);
+    margin-bottom: 12px;
+}
+
+.addr-field-group {
+    margin-bottom: 14px;
+    position: relative;
+}
+
+.addr-input-underline {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #eeeeee;
+    padding: 10px 0;
+    font-size: 0.95rem;
+    color: #222;
+    background: transparent;
+    transition: border-color 0.2s;
+}
+
+.addr-input-underline:focus {
+    outline: none;
+    border-bottom-color: var(--shopee-orange);
+}
+
+.addr-input-underline::placeholder {
+    color: #9e9e9e;
+}
+
+.addr-picker-btn {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #eeeeee;
+    padding: 12px 0;
+    font-size: 0.95rem;
+    color: #222;
+    background: transparent;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.addr-picker-btn.empty {
+    color: #9e9e9e;
+}
+
+.addr-picker-btn i {
+    color: #9e9e9e;
+    font-size: 0.9rem;
+}
+
+/* Settings Card (Default Toggle + Label) */
+.address-settings-card {
+    background: #ffffff;
+    border-radius: 8px;
+    margin: 0 18px 20px 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--shopee-border);
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.setting-row:first-child {
+    border-bottom: 1px solid #f5f5f5;
+    padding-bottom: 14px;
+}
+
+.setting-row:last-child {
+    padding-top: 14px;
+}
+
+.setting-label {
+    font-size: 0.95rem;
+    color: var(--shopee-text-dark);
+    font-weight: 500;
+}
+
+/* iOS Style Switch */
+.ios-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    margin-bottom: 0;
+}
+
+.ios-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.ios-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e4e4e6;
+    transition: .3s;
+    border-radius: 28px;
+}
+
+.ios-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.ios-switch input:checked + .ios-slider {
+    background-color: var(--shopee-orange);
+}
+
+.ios-switch input:checked + .ios-slider:before {
+    transform: translateX(22px);
+}
+
+/* Label Buttons [ที่ทำงาน] [บ้าน] */
+.label-btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-tag-label {
+    border: 1px solid #e0e0e0;
+    background-color: #f7f7f7;
+    color: #555555;
+    padding: 6px 18px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-tag-label.active {
+    border-color: var(--shopee-orange);
+    background-color: var(--shopee-orange-light);
+    color: var(--shopee-orange);
+    font-weight: 500;
+}
+
+/* Confirm Button */
+.btn-confirm-address {
+    background-color: var(--shopee-orange);
+    color: #ffffff;
+    border: none;
+    width: 100%;
+    padding: 13px;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-confirm-address:hover {
+    background-color: #d63d1e;
+}
+
+.btn-confirm-address:disabled {
+    background-color: #e0e0e0;
+    color: #9e9e9e;
+    cursor: not-allowed;
+}
+
+/* Cascading Picker Modal */
+.cascading-picker-modal .modal-dialog {
+    max-width: 520px;
+}
+
+.picker-search-input {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+}
+
+.picker-list {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.picker-list-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    font-size: 0.92rem;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.picker-list-item:hover {
+    background-color: var(--shopee-orange-light);
+    color: var(--shopee-orange);
+}
+
+.picker-breadcrumbs {
+    font-size: 0.85rem;
+    color: var(--shopee-orange);
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+

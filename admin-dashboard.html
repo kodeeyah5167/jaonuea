@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบผู้ดูแลระบบ - จ้าวเนื้อ๑</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background-color: var(--dark-bg);
+            color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 12px 20px;
+            display: block;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--secondary-color);
+            border-left-color: var(--secondary-color);
+        }
+
+        .admin-header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .icon-bg {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar" style="width: 250px;">
+            <div class="p-3 text-center border-bottom border-secondary">
+                <img src="assets/img/logo.jpg" alt="Logo" height="60" class="rounded-circle mb-2 bg-white p-1"
+                    onerror="this.src='https://via.placeholder.com/60/610C10/D4AF37?text=JN';">
+                <h5 class="text-secondary-custom font-heading mb-0">ระบบจัดการ จ้าวเนื้อ๑</h5>
+                <small class="text-muted">Admin Panel</small>
+            </div>
+            <div class="py-3">
+                <a href="admin-dashboard.html" class="active"><i class="fas fa-chart-line me-2"></i> แดชบอร์ด &
+                    รายงาน</a>
+                <a href="admin-orders.html"><i class="fas fa-shopping-bag me-2"></i> จัดการคำสั่งซื้อ <span
+                        id="menu-orders-badge" class="badge bg-danger rounded-pill float-end"
+                        style="display:none;">0</span></a>
+                <a href="admin-farm.html"><i class="fas fa-tractor me-2"></i> ทะเบียนฟาร์มโค</a>
+                <a href="admin-purchase.html"><i class="fas fa-hand-holding-usd me-2"></i> รับซื้อโคเข้าฟาร์ม</a>
+                <a href="admin-inventory.html"><i class="fas fa-boxes me-2"></i> คลังสินค้า & แปลงสภาพ</a>
+                <a href="api/auth.php?action=logout" class="mt-5 text-danger"
+                    onclick="return confirm('คุณต้องการออกจากระบบใช่หรือไม่?');"><i
+                        class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow-1">
+            <!-- Header -->
+            <div class="admin-header p-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 text-primary-custom font-heading">ภาพรวมระบบ (Dashboard)</h4>
+                <div>
+                    <span class="me-3"><i class="fas fa-user-circle me-1"></i> ผู้ดูแลระบบ (Admin)</span>
+                    <a href="index.html" class="btn btn-sm btn-outline-secondary" target="_blank"><i
+                            class="fas fa-external-link-alt me-1"></i> ดูหน้าร้าน</a>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4">
+
+                <!-- Stats Row -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="icon-bg bg-primary-custom text-white me-3 flex-shrink-0">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">ยอดขายเดือนนี้</h6>
+                                    <h4 class="mb-0 fw-bold" id="stat-sales">฿0.00</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="icon-bg bg-success text-white me-3 flex-shrink-0">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">คำสั่งซื้อใหม่ (รอดำเนินการ)</h6>
+                                    <h4 class="mb-0 fw-bold" id="stat-orders">0 รายการ</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="icon-bg bg-warning text-dark me-3 flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">สินค้าใกล้หมด / หมดสต๊อก</h6>
+                                    <h4 class="mb-0 fw-bold text-danger" id="stat-lowstock">0 รายการ</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="icon-bg bg-info text-white me-3 flex-shrink-0">
+                                    <i class="fas fa-cow"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">โคเนื้อในฟาร์ม</h6>
+                                    <h4 class="mb-0 fw-bold" id="stat-cattle">0 ตัว</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Revenue Chart (Fixed Original Size & Paginated/Scrollable by Month Window) -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div
+                                class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-chart-bar me-2"></i>สถิติรายได้ vs ต้นทุน
+                                    (รายเดือนทั้งหมด)</h6>
+                                <div class="d-flex align-items-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                        id="btnChartPrev" onclick="shiftChartWindow(-1)" title="เลื่อนดูเดือนก่อนหน้า">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <span class="small text-muted px-1" id="chartRangeLabel">-</span>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                        id="btnChartNext" onclick="shiftChartWindow(1)" title="เลื่อนดูเดือนถัดไป">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="revenueChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock & Out of Stock Alerts -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h6 class="mb-0 fw-bold text-danger"><i
+                                        class="fas fa-bell me-2"></i>แจ้งเตือนสินค้าใกล้หมด / สินค้าหมด</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush" id="low-stock-list">
+                                    <li class="list-group-item text-center p-4 text-muted">
+                                        กำลังโหลดข้อมูล...
+                                    </li>
+                                </ul>
+                                <div class="p-3 text-center border-top">
+                                    <a href="admin-inventory.html"
+                                        class="btn btn-sm btn-outline-primary">ไปหน้าคลังสินค้า & แปลงสภาพ <i
+                                            class="fas fa-arrow-right ms-1"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profit by Cow Table -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="mb-0 fw-bold"><i
+                                class="fas fa-table me-2"></i>รายงานสรุปรายได้จากการจำหน่ายเนื้อเทียบต้นทุน (ต่อโค 1
+                            ตัว)</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">รหัสประจำตัวโค</th>
+                                        <th>วันที่ชำแหละ</th>
+                                        <th>ต้นทุนรวม</th>
+                                        <th>รายได้รวมจากการขายเนื้อ</th>
+                                        <th>กำไร/ขาดทุน</th>
+                                        <th>สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="profit-summary-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-1">
+                    <!-- Daily Summary Table -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div
+                                class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-calendar-day me-2"></i>สรุปยอดรายวัน</h6>
+                            </div>
+                            <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="ps-3">วันที่</th>
+                                            <th class="text-end">ยอดขาย (บาท)</th>
+                                            <th class="text-end">ต้นทุน (บาท)</th>
+                                            <th class="text-end pe-3">กำไร (บาท)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="daily-summary-body">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Summary Table -->
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div
+                                class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-calendar-alt me-2"></i>สรุปยอดรายเดือน</h6>
+                            </div>
+                            <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="ps-3">เดือน</th>
+                                            <th class="text-end">ยอดขาย (บาท)</th>
+                                            <th class="text-end">ต้นทุน (บาท)</th>
+                                            <th class="text-end pe-3">กำไร (บาท)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="monthly-summary-body">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted">กำลังโหลดข้อมูล...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/admin-notifications.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let revenueChart;
+        let rawChartData = { labels: [], revenue: [], cost: [], profit: [], months: [] };
+        let chartStartIndex = 0;
+        const CHART_PAGE_SIZE = 6; // แสดงครั้งละไม่เกิน 6 เดือนในขนาดกราฟเท่าเดิม และกดเลื่อนซ้าย-ขวาได้
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initChart();
+            refreshAllDashboardData(false);
+
+            // อัปเดตข้อมูลทุกส่วนแบบเรียลไทม์ทุก 5 วินาที (รวมถึงกราฟรายได้ vs ต้นทุน)
+            setInterval(() => {
+                refreshAllDashboardData(false);
+            }, 5000);
+        });
+
+        function refreshAllDashboardData(isManual = false) {
+            if (isManual) {
+                const icon = document.getElementById('refresh-icon');
+                if (icon) icon.classList.add('fa-spin');
+                setTimeout(() => { if (icon) icon.classList.remove('fa-spin'); }, 600);
+            }
+            fetchStats();
+            fetchRevenueChart();
+            fetchProfitSummary();
+            fetchDailyMonthlySummary();
+        }
+
+        function fetchStats() {
+            fetch('api/admin.php?action=get_stats&_t=' + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const stats = data.data;
+                        document.getElementById('stat-sales').innerText = '฿' + (stats.today_sales || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+                        document.getElementById('stat-orders').innerText = (stats.new_orders || 0) + ' รายการ';
+                        document.getElementById('stat-lowstock').innerText = (stats.low_stock || 0) + ' รายการ';
+                        document.getElementById('stat-cattle').innerText = (stats.farm_cattles || 0) + ' ตัว';
+
+                        const badge = document.getElementById('menu-orders-badge');
+                        if (stats.new_orders > 0) {
+                            badge.style.display = 'inline-block';
+                            badge.innerText = stats.new_orders;
+                        } else {
+                            badge.style.display = 'none';
+                        }
+
+                        const lowStockList = document.getElementById('low-stock-list');
+                        if (stats.low_stock_list && stats.low_stock_list.length > 0) {
+                            lowStockList.innerHTML = '';
+                            stats.low_stock_list.forEach(item => {
+                                const kg = Math.max(0, parseFloat(item.stock_kg) || 0);
+                                const isOutOfStock = kg <= 0;
+                                const statusTag = isOutOfStock
+                                    ? '<span class="badge bg-danger me-1">สินค้าหมด</span>'
+                                    : '<span class="badge bg-warning text-dark me-1">ใกล้หมด</span>';
+                                const qtyBadgeClass = isOutOfStock ? 'bg-secondary' : 'bg-danger';
+                                const iconHtml = isOutOfStock
+                                    ? '<i class="fas fa-times-circle text-danger me-2"></i>'
+                                    : '<i class="fas fa-exclamation-circle text-warning me-2"></i>';
+
+                                lowStockList.innerHTML += `
+                                    <li class="list-group-item d-flex justify-content-between align-items-center ${isOutOfStock ? 'bg-danger bg-opacity-10' : ''}">
+                                        <span class="${isOutOfStock ? 'fw-bold text-danger' : ''}">${iconHtml}${item.name}</span>
+                                        <div>
+                                            ${statusTag}
+                                            <span class="badge ${qtyBadgeClass} rounded-pill">${kg.toFixed(1)} กก.</span>
+                                        </div>
+                                    </li>
+                                `;
+                            });
+                        } else {
+                            lowStockList.innerHTML = '<li class="list-group-item text-center p-4 text-muted">ไม่มีการแจ้งเตือนสินค้าใกล้หมดหรือสินค้าหมด</li>';
+                        }
+                    }
+                })
+                .catch(err => console.error('Error fetching stats:', err));
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            revenueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'รายได้ (บาท)',
+                            data: [],
+                            backgroundColor: '#610C10',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'ต้นทุน (บาท)',
+                            data: [],
+                            backgroundColor: '#D4AF37',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function shiftChartWindow(step) {
+            const total = (rawChartData.labels || []).length;
+            const maxStart = Math.max(0, total - CHART_PAGE_SIZE);
+            chartStartIndex = Math.min(maxStart, Math.max(0, chartStartIndex + step));
+            renderRevenueChartFromState();
+        }
+
+        function renderRevenueChartFromState() {
+            if (!revenueChart || !rawChartData.labels) return;
+
+            const total = rawChartData.labels.length;
+            const maxStart = Math.max(0, total - CHART_PAGE_SIZE);
+            if (chartStartIndex > maxStart) {
+                chartStartIndex = maxStart;
+            }
+
+            const endIdx = Math.min(total, chartStartIndex + CHART_PAGE_SIZE);
+            const labels = rawChartData.labels.slice(chartStartIndex, endIdx);
+            const rev = rawChartData.revenue.slice(chartStartIndex, endIdx);
+            const cost = rawChartData.cost.slice(chartStartIndex, endIdx);
+
+            revenueChart.data.labels = labels;
+            revenueChart.data.datasets[0].data = rev;
+            revenueChart.data.datasets[1].data = cost;
+            revenueChart.update();
+
+            const rangeLabel = document.getElementById('chartRangeLabel');
+            if (rangeLabel) {
+                rangeLabel.innerText = labels.length > 0
+                    ? (labels.length === 1 ? labels[0] : `${labels[0]} - ${labels[labels.length - 1]}`)
+                    : '-';
+            }
+
+            const prevBtn = document.getElementById('btnChartPrev');
+            const nextBtn = document.getElementById('btnChartNext');
+            if (prevBtn) prevBtn.disabled = (chartStartIndex <= 0);
+            if (nextBtn) nextBtn.disabled = (endIdx >= total);
+        }
+
+        function fetchRevenueChart() {
+            fetch('api/admin.php?action=get_revenue_chart&_t=' + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        rawChartData = data.data;
+                        renderRevenueChartFromState();
+                    }
+                })
+                .catch(err => console.error('Error fetching chart data:', err));
+        }
+
+        function formatDateDMY(dateStr) {
+            if (!dateStr) return '-';
+            const clean = String(dateStr).trim().split(' ')[0];
+            const parts = clean.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        function formatMonthMY(monthStr) {
+            if (!monthStr) return '-';
+            const parts = String(monthStr).trim().split('-');
+            if (parts.length === 2) {
+                return `${parts[1]}/${parts[0]}`;
+            }
+            return monthStr;
+        }
+
+        function fetchProfitSummary() {
+            fetch('api/admin.php?action=get_profit_summary&_t=' + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const tbody = document.getElementById('profit-summary-body');
+                        if (data.data.length > 0) {
+                            tbody.innerHTML = '';
+                            let sumCost = 0;
+                            let sumRev = 0;
+                            let sumProfit = 0;
+
+                            data.data.forEach(item => {
+                                sumCost += parseFloat(item.cost_price) || 0;
+                                sumRev += parseFloat(item.revenue) || 0;
+                                sumProfit += parseFloat(item.profit) || 0;
+
+                                let profitClass = item.profit >= 0 ? 'text-success' : 'text-danger';
+                                let statusBadge = item.status === 'processed'
+                                    ? '<span class="badge bg-success">ชำแหละแล้ว</span>'
+                                    : '<span class="badge bg-warning text-dark">ยังมีชีวิต</span>';
+
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td class="ps-4 fw-bold">${item.tag_number}</td>
+                                        <td>${formatDateDMY(item.purchased_at)}</td>
+                                        <td>฿${item.cost_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td>฿${item.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td class="fw-bold ${profitClass}">฿${item.profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td>${statusBadge}</td>
+                                    </tr>
+                                `;
+                            });
+
+                            let totalProfitClass = sumProfit >= 0 ? 'text-success' : 'text-danger';
+                            tbody.innerHTML += `
+                                <tr class="table-light fw-bold border-top">
+                                    <td class="ps-4" colspan="2">รวมทั้งหมด (${data.data.length} ตัว):</td>
+                                    <td>฿${sumCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td>฿${sumRev.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="${totalProfitClass}">฿${sumProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td></td>
+                                </tr>
+                            `;
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">ยังไม่มีข้อมูลโคที่ชำแหละแล้ว</td></tr>';
+                        }
+                    }
+                })
+                .catch(err => console.error('Error fetching profit summary:', err));
+        }
+
+        function fetchDailyMonthlySummary() {
+            fetch('api/admin.php?action=get_daily_monthly_summary&_t=' + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const dailyBody = document.getElementById('daily-summary-body');
+                        if (!data.daily || data.daily.length === 0) {
+                            dailyBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">ยังไม่มีข้อมูลความเคลื่อนไหว</td></tr>';
+                        } else {
+                            dailyBody.innerHTML = '';
+                            let sumDRev = 0, sumDCost = 0, sumDProfit = 0, rowCountD = 0;
+
+                            data.daily.forEach((d) => {
+                                const rev = parseFloat(d.revenue) || 0;
+                                const cost = parseFloat(d.cost) || 0;
+                                const profit = parseFloat(d.profit) || 0;
+                                if (rev === 0 && cost === 0) return;
+
+                                sumDRev += rev;
+                                sumDCost += cost;
+                                sumDProfit += profit;
+                                rowCountD++;
+
+                                let tr = document.createElement('tr');
+                                let profitClass = profit >= 0 ? 'text-success' : 'text-danger';
+                                tr.innerHTML = `
+                                    <td class="ps-3">${formatDateDMY(d.date)}</td>
+                                    <td class="text-end">฿${rev.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end">฿${cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end pe-3 fw-bold ${profitClass}">฿${profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                `;
+                                dailyBody.appendChild(tr);
+                            });
+
+                            if (rowCountD === 0) {
+                                dailyBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">ยังไม่มีข้อมูลความเคลื่อนไหว</td></tr>';
+                            } else {
+                                let totalRow = document.createElement('tr');
+                                totalRow.className = 'table-light fw-bold border-top';
+                                let pClass = sumDProfit >= 0 ? 'text-success' : 'text-danger';
+                                totalRow.innerHTML = `
+                                    <td class="ps-3">รวมทั้งหมด</td>
+                                    <td class="text-end">฿${sumDRev.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end">฿${sumDCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end pe-3 ${pClass}">฿${sumDProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                `;
+                                dailyBody.appendChild(totalRow);
+                            }
+                        }
+
+                        const monthlyBody = document.getElementById('monthly-summary-body');
+                        if (!data.monthly || data.monthly.length === 0) {
+                            monthlyBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">ยังไม่มีข้อมูลความเคลื่อนไหว</td></tr>';
+                        } else {
+                            monthlyBody.innerHTML = '';
+                            let sumMRev = 0, sumMCost = 0, sumMProfit = 0, rowCountM = 0;
+
+                            data.monthly.forEach((m) => {
+                                const rev = parseFloat(m.revenue) || 0;
+                                const cost = parseFloat(m.cost) || 0;
+                                const profit = parseFloat(m.profit) || 0;
+                                if (rev === 0 && cost === 0) return;
+
+                                sumMRev += rev;
+                                sumMCost += cost;
+                                sumMProfit += profit;
+                                rowCountM++;
+
+                                let tr = document.createElement('tr');
+                                let profitClass = profit >= 0 ? 'text-success' : 'text-danger';
+                                tr.innerHTML = `
+                                    <td class="ps-3">${formatMonthMY(m.month)}</td>
+                                    <td class="text-end">฿${rev.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end">฿${cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end pe-3 fw-bold ${profitClass}">฿${profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                `;
+                                monthlyBody.appendChild(tr);
+                            });
+
+                            if (rowCountM === 0) {
+                                monthlyBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">ยังไม่มีข้อมูลความเคลื่อนไหว</td></tr>';
+                            } else {
+                                let totalRow = document.createElement('tr');
+                                totalRow.className = 'table-light fw-bold border-top';
+                                let pClass = sumMProfit >= 0 ? 'text-success' : 'text-danger';
+                                totalRow.innerHTML = `
+                                    <td class="ps-3">รวมทั้งหมด</td>
+                                    <td class="text-end">฿${sumMRev.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end">฿${sumMCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-end pe-3 ${pClass}">฿${sumMProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                `;
+                                monthlyBody.appendChild(totalRow);
+                            }
+                        }
+                    }
+                })
+                .catch(err => console.error('Error fetching daily summary:', err));
+        }
+    </script>
+</body>
+
+</html>

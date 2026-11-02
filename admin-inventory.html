@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังสินค้าและการแปลงสภาพ - จ้าวเนื้อ๑ Admin</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background-color: var(--dark-bg);
+            color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 12px 20px;
+            display: block;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--secondary-color);
+            border-left-color: var(--secondary-color);
+        }
+
+        .admin-header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-stat-card {
+            border: none;
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .summary-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .cut-thumb {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+        }
+
+        .image-preview-box {
+            width: 100%;
+            height: 160px;
+            border: 2px dashed #ced4da;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .image-preview-box:hover {
+            border-color: var(--primary-color, #610C10);
+        }
+
+        .image-preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar" style="width: 250px;">
+            <div class="p-3 text-center border-bottom border-secondary">
+                <img src="assets/img/logo.jpg" alt="Logo" height="60" class="rounded-circle mb-2 bg-white p-1"
+                    onerror="this.src='https://via.placeholder.com/60/610C10/D4AF37?text=JN';">
+                <h5 class="text-secondary-custom font-heading mb-0">ระบบจัดการ จ้าวเนื้อ๑</h5>
+            </div>
+            <div class="py-3">
+                <a href="admin-dashboard.html"><i class="fas fa-chart-line me-2"></i> แดชบอร์ด & รายงาน</a>
+                <a href="admin-orders.html"><i class="fas fa-shopping-bag me-2"></i> จัดการคำสั่งซื้อ <span
+                        id="menu-orders-badge" class="badge bg-danger rounded-pill float-end"
+                        style="display:none;">0</span></a>
+                <a href="admin-farm.html"><i class="fas fa-tractor me-2"></i> ทะเบียนฟาร์มโค</a>
+                <a href="admin-purchase.html"><i class="fas fa-hand-holding-usd me-2"></i> รับซื้อโคเข้าฟาร์ม</a>
+                <a href="admin-inventory.html" class="active"><i class="fas fa-boxes me-2"></i> คลังสินค้า &
+                    แปลงสภาพ</a>
+                <a href="api/auth.php?action=logout" class="mt-5 text-danger"
+                    onclick="return confirm('คุณต้องการออกจากระบบใช่หรือไม่?');"><i
+                        class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow-1">
+            <!-- Header -->
+            <div class="admin-header p-3 d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-0 text-primary-custom font-heading">คลังสินค้า การแปลงสภาพ & จัดการชิ้นส่วนหน้าเว็บ
+                    </h4>
+                    <small class="text-muted">บันทึกการตัดแต่งเนื้อโค
+                        และเพิ่ม/ลบรายการชิ้นส่วนเนื้อที่แสดงจำหน่ายบนหน้าเว็บไซต์</small>
+                </div>
+                <button class="btn btn-secondary-custom fw-bold shadow-sm" onclick="openAddProductModal()">
+                    <i class="fas fa-plus-circle me-1"></i> เพิ่มชิ้นส่วนเนื้อใหม่ (แสดงหน้าเว็บ)
+                </button>
+            </div>
+
+            <div class="container-fluid px-4 pb-5">
+
+                <ul class="nav nav-tabs mb-4" id="inventoryTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="process-tab" data-bs-toggle="tab"
+                            data-bs-target="#process" type="button" role="tab">
+                            <i class="fas fa-cut me-1"></i> แปลงสภาพโคเนื้อ
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock"
+                            type="button" role="tab">
+                            <i class="fas fa-store me-1"></i> สต๊อกสินค้า & จัดการชิ้นส่วนหน้าเว็บ
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="inventoryTabsContent">
+
+                    <!-- Tab 1: Processing -->
+                    <div class="tab-pane fade show active" id="process" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-12 mb-4">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-primary-custom text-white py-3">
+                                        <h6 class="mb-0 fw-bold text-secondary-custom"><i
+                                                class="fas fa-cut me-2"></i>บันทึกการแปลงสภาพ (ตัดแต่งชิ้นส่วน)</h6>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <div class="row mb-4 align-items-end">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold">ดึงข้อมูลโคเนื้อ (Cattle ID)</label>
+                                                <div class="input-group">
+                                                    <select class="form-select" id="searchCattleInput"
+                                                        onchange="loadCattleData()">
+                                                        <option selected disabled value="">กำลังโหลดข้อมูล...</option>
+                                                    </select>
+                                                    <button class="btn btn-outline-secondary" type="button"
+                                                        onclick="loadCattleData()"><i class="fas fa-search"></i>
+                                                        ค้นหา</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="p-3 bg-light rounded border d-none" id="cattleDataDisplay">
+                                                    <div class="row text-center">
+                                                        <div class="col-3 border-end">
+                                                            <small class="text-muted d-block">รหัสอ้างอิง</small>
+                                                            <strong class="text-primary-custom"
+                                                                id="dispID">CT-69046</strong>
+                                                        </div>
+                                                        <div class="col-3 border-end">
+                                                            <small class="text-muted d-block">สายพันธุ์</small>
+                                                            <strong id="dispBreed">แองกัส</strong>
+                                                        </div>
+                                                        <div class="col-3 border-end">
+                                                            <small class="text-muted d-block">น้ำหนักก่อนชำแหละ</small>
+                                                            <strong id="dispWeight">420 กก.</strong>
+                                                        </div>
+                                                        <div class="col-3">
+                                                            <small class="text-muted d-block">ต้นทุน</small>
+                                                            <strong class="text-danger" id="dispCost">฿42,000</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="mb-3 mt-4">
+                                            <h6 class="fw-bold mb-0">บันทึกน้ำหนักที่ได้จากการชำแหละ (กิโลกรัม)</h6>
+                                        </div>
+                                        <form id="processingForm" class="d-none">
+                                            <div id="dynamicPartsContainer" class="mb-3">
+                                                <!-- Dynamic rows will be inserted here -->
+                                            </div>
+                                            <div class="mb-4">
+                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="addPartRow()"><i class="fas fa-plus"></i>
+                                                    เพิ่มชิ้นส่วน</button>
+                                            </div>
+
+                                            <div
+                                                class="alert alert-info d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>น้ำหนักรวมที่ได้จากการตัดแต่ง: </strong>
+                                                    <span id="totalProcessedWeight" class="fs-5 fw-bold">0</span> กก.
+                                                    <span class="text-muted small ms-2">(Yield: <span
+                                                            id="yieldPercent">0</span>%)</span>
+                                                </div>
+                                                <button type="button" class="btn btn-secondary-custom"
+                                                    onclick="submitProcessing()"><i class="fas fa-plus-circle me-1"></i>
+                                                    ยืนยันการแปลงสภาพและเพิ่มเข้าสต๊อก</button>
+                                            </div>
+                                        </form>
+
+                                        <div id="processingPlaceholder" class="text-center py-5 text-muted">
+                                            <i class="fas fa-search fa-3x mb-3 text-light"></i>
+                                            <h5>กรุณาค้นหารหัสโคเนื้อเพื่อเริ่มการบันทึก</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Current Stock & Website Meat Cuts Management -->
+                    <div class="tab-pane fade" id="stock" role="tabpanel">
+                        <!-- Summary Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="card summary-stat-card shadow-sm p-3 bg-white">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary-custom text-white d-flex align-items-center justify-content-center me-3"
+                                            style="width: 48px; height: 48px;">
+                                            <i class="fas fa-drumstick-bite fa-lg text-secondary-custom"></i>
+                                        </div>
+                                        <div>
+                                            <small
+                                                class="text-muted d-block">ชิ้นส่วนเนื้อที่แสดงหน้าเว็บทั้งหมด</small>
+                                            <h4 class="mb-0 fw-bold text-dark"><span id="summary-parts-count">0</span>
+                                                <small class="fs-6 fw-normal text-muted">รายการ</small>
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card summary-stat-card shadow-sm p-3 bg-white">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
+                                            style="width: 48px; height: 48px;">
+                                            <i class="fas fa-weight-hanging fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">จำนวนสต๊อกคงเหลือรวม</small>
+                                            <h4 class="mb-0 fw-bold text-primary-custom" id="summary-total-kg">0 กก./ชิ้น
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card summary-stat-card shadow-sm p-3 bg-white">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center me-3"
+                                            style="width: 48px; height: 48px;">
+                                            <i class="fas fa-coins fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">มูลค่าสต๊อกคงเหลือโดยประมาณ</small>
+                                            <h4 class="mb-0 fw-bold text-dark" id="summary-total-val">฿0</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div
+                                class="card-header bg-white border-bottom py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div>
+                                    <h6 class="mb-0 fw-bold"><i
+                                            class="fas fa-boxes me-2 text-primary-custom"></i>รายการชิ้นส่วนเนื้อที่แสดงหน้าเว็บ
+                                        & สต๊อกคงเหลือ</h6>
+                                    <small class="text-muted">สามารถเพิ่มชิ้นส่วนใหม่ขึ้นแสดงบนหน้าเว็บไซต์
+                                        หรือลบชิ้นส่วนที่ไม่ต้องการออกได้ทันที</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-secondary-custom fw-bold"
+                                        onclick="openAddProductModal()">
+                                        <i class="fas fa-plus me-1"></i> เพิ่มชิ้นส่วนเนื้อใหม่
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="exportToExcel()">
+                                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="ps-4" style="width: 80px;">รูปภาพ</th>
+                                                <th>รายการชิ้นส่วนเนื้อ (แสดงหน้าเว็บ)</th>
+                                                <th class="text-center">คงเหลือ</th>
+                                                <th class="text-center">ราคาขาย</th>
+                                                <th class="text-center">มูลค่าคงเหลือโดยประมาณ</th>
+                                                <th class="text-center">สถานะ</th>
+                                                <th class="text-center pe-4">จัดการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="stock-tbody">
+                                            <tr>
+                                                <td colspan="7" class="text-center py-5 text-muted">
+                                                    กำลังโหลดข้อมูลสต๊อก...</td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot class="table-light fw-bold">
+                                            <tr>
+                                                <td colspan="2" class="ps-4 text-end">รวมทั้งหมด:</td>
+                                                <td class="text-center text-primary-custom fs-5" id="stock-total-kg">0
+                                                    กก./ชิ้น</td>
+                                                <td></td>
+                                                <td class="text-center text-primary-custom fs-5" id="stock-total-val">฿0
+                                                </td>
+                                                <td colspan="2"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        let liveWeight = 0;
+        let currentCattleId = null;
+        let currentStockData = [];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchStock();
+            fetchAliveCattles();
+            fetchProductsList();
+        });
+
+        let productsList = [];
+
+        function fetchAliveCattles() {
+            fetch('api/admin.php?action=get_cattles')
+                .then(res => res.json())
+                .then(data => {
+                    const select = document.getElementById('searchCattleInput');
+                    if (data.status === 'success' && data.data.length > 0) {
+                        const eligibleCattles = data.data.filter(c => c.status === 'alive' || c.status === 'processed');
+                        if (eligibleCattles.length > 0) {
+                            let options = '<option selected disabled value="">กรุณาเลือกรหัสโคเนื้อ...</option>';
+                            eligibleCattles.forEach(c => {
+                                let statusText = c.status === 'alive' ? 'ยังมีชีวิต' : 'ชำแหละแล้ว (แก้ไข)';
+                                let wInt = Math.round(parseFloat(c.weight_kg) || 0);
+                                options += `<option value="${c.tag_number}">${c.tag_number} (${c.breed}) - น้ำหนัก ${wInt} กก. - ${statusText}</option>`;
+                            });
+                            select.innerHTML = options;
+                        } else {
+                            select.innerHTML = '<option selected disabled value="">ไม่มีโคเนื้อในระบบ</option>';
+                        }
+                    } else {
+                        select.innerHTML = '<option selected disabled value="">ไม่มีข้อมูลโคเนื้อ</option>';
+                    }
+                });
+        }
+
+        function fetchProductsList() {
+            return fetch('api/admin.php?action=get_inventory_stock')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const uniqueMap = new Map();
+                        (data.data || []).forEach(item => {
+                            if (item && item.name && !uniqueMap.has(item.name)) {
+                                uniqueMap.set(item.name, item);
+                            }
+                        });
+                        productsList = Array.from(uniqueMap.values());
+                        refreshPartDropdowns();
+                    }
+                });
+        }
+
+        function refreshPartDropdowns() {
+            document.querySelectorAll('.part-name-select').forEach(select => {
+                const currentVal = select.value;
+                let optionsHtml = '<option value="" disabled ' + (!currentVal ? 'selected' : '') + '>เลือกชิ้นส่วนเนื้อ...</option>';
+                productsList.forEach(p => {
+                    const selected = p.name === currentVal ? 'selected' : '';
+                    optionsHtml += `<option value="${p.name}" data-unit="${p.unit || 'กก.'}" ${selected}>${p.name}</option>`;
+                });
+                select.innerHTML = optionsHtml;
+                if (currentVal) updateRowUnit(select);
+            });
+        }
+
+        function loadCattleData() {
+            const tagNumber = document.getElementById('searchCattleInput').value.trim();
+            if (!tagNumber) return;
+
+            fetch('api/admin.php?action=get_cattles')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const cattle = data.data.find(c => c.tag_number.toUpperCase() === tagNumber.toUpperCase() && (c.status === 'alive' || c.status === 'processed'));
+                        if (cattle) {
+                            currentCattleId = cattle.id;
+                            liveWeight = Math.round(parseFloat(cattle.weight_kg) || 0);
+                            document.getElementById('dispID').innerText = cattle.tag_number;
+                            document.getElementById('dispBreed').innerText = cattle.breed;
+                            document.getElementById('dispWeight').innerText = liveWeight + ' กก.';
+                            document.getElementById('dispCost').innerText = '฿' + parseFloat(cattle.cost_price).toLocaleString();
+
+                            document.getElementById('cattleDataDisplay').classList.remove('d-none');
+                            document.getElementById('processingForm').classList.remove('d-none');
+                            document.getElementById('processingPlaceholder').classList.add('d-none');
+
+                            // Initialize Dynamic Rows
+                            initDynamicRows(cattle);
+                        } else {
+                            alert('ไม่พบข้อมูลโคเนื้อรหัสนี้');
+                        }
+                    }
+                });
+        }
+
+        function initDynamicRows(cattle) {
+            const container = document.getElementById('dynamicPartsContainer');
+            container.innerHTML = ''; // clear
+
+            if (cattle.status === 'processed') {
+                // Fetch existing processing records
+                fetch(`api/admin.php?action=get_cattle_processing&id=${cattle.id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success' && data.data.length > 0) {
+                            data.data.forEach(item => {
+                                addPartRow(item.product_name, item.yield_kg);
+                            });
+                            calculateTotalWeight();
+                        } else {
+                            addPartRow(); // empty row
+                        }
+                    });
+            } else {
+                addPartRow(); // empty row for new processing
+                calculateTotalWeight();
+            }
+        }
+
+        function addPartRow(selectedProductName = '', weight = 0) {
+            const container = document.getElementById('dynamicPartsContainer');
+            const rowId = 'row-' + Date.now() + Math.random().toString(36).substr(2, 5);
+
+            let selectedUnit = 'กก.';
+            let optionsHtml = '<option value="" disabled selected>เลือกชิ้นส่วนเนื้อ...</option>';
+            productsList.forEach(p => {
+                const selected = p.name === selectedProductName ? 'selected' : '';
+                if (selected && p.unit) selectedUnit = p.unit;
+                optionsHtml += `<option value="${p.name}" data-unit="${p.unit || 'กก.'}" ${selected}>${p.name}</option>`;
+            });
+
+            const rowHtml = `
+                <div class="row g-2 mb-2 align-items-center part-row" id="${rowId}">
+                    <div class="col-md-5 col-6">
+                        <select class="form-select part-name-select" onchange="updateRowUnit(this)">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <div class="col-md-4 col-4">
+                        <div class="input-group">
+                            <input type="number" class="form-control part-weight" value="${weight > 0 ? Math.round(weight) : ''}" min="0" step="1" placeholder="จำนวน/น้ำหนัก">
+                            <span class="input-group-text part-unit-text">${selectedUnit}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-2 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removePartRow('${rowId}')"><i class="fas fa-trash"></i> <span class="d-none d-md-inline">ลบแถว</span></button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+
+            // Add event listener to new input
+            const newInput = document.querySelector(`#${rowId} .part-weight`);
+            newInput.addEventListener('input', calculateTotalWeight);
+        }
+
+        function updateRowUnit(selectEl) {
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            const unit = (selectedOpt && selectedOpt.getAttribute('data-unit')) ? selectedOpt.getAttribute('data-unit') : 'กก.';
+            const row = selectEl.closest('.part-row');
+            if (row) {
+                const unitSpan = row.querySelector('.part-unit-text');
+                if (unitSpan) unitSpan.textContent = unit;
+            }
+        }
+
+        function removePartRow(rowId) {
+            document.getElementById(rowId).remove();
+            calculateTotalWeight();
+        }
+
+        function calculateTotalWeight() {
+            let total = 0;
+            document.querySelectorAll('.part-weight').forEach(input => {
+                let val = parseFloat(input.value) || 0;
+                total += val;
+            });
+
+            document.getElementById('totalProcessedWeight').textContent = Math.round(total).toLocaleString();
+
+            if (liveWeight > 0) {
+                let yieldP = (total / liveWeight) * 100;
+                document.getElementById('yieldPercent').textContent = Math.round(yieldP);
+            }
+        }
+
+        function submitProcessing() {
+            if (!currentCattleId) return;
+            if (!confirm('ยืนยันการแปลงสภาพและบันทึกสต๊อก?')) return;
+
+            const yields = {};
+
+            document.querySelectorAll('.part-row').forEach(row => {
+                const select = row.querySelector('.part-name-select');
+                const input = row.querySelector('.part-weight');
+                const name = select.value;
+                const weight = parseFloat(input.value) || 0;
+
+                if (name && weight > 0) {
+                    if (yields[name]) {
+                        yields[name] += weight; // combine if same product selected multiple times
+                    } else {
+                        yields[name] = weight;
+                    }
+                }
+            });
+
+            if (Object.keys(yields).length === 0) {
+                alert('กรุณาเลือกชิ้นส่วนเนื้อและระบุน้ำหนักอย่างน้อย 1 รายการ');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('cattle_id', currentCattleId);
+            formData.append('yields', JSON.stringify(yields));
+
+            fetch('api/admin.php?action=process_inventory', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('บันทึกข้อมูลการแปลงสภาพเรียบร้อยแล้ว');
+                        fetchStock(); // Refresh stock
+
+                        // Switch to stock tab
+                        var triggerEl = document.querySelector('#stock-tab');
+                        var tab = new bootstrap.Tab(triggerEl);
+                        tab.show();
+
+                        // Reset
+                        document.getElementById('cattleDataDisplay').classList.add('d-none');
+                        document.getElementById('processingForm').classList.add('d-none');
+                        document.getElementById('processingPlaceholder').classList.remove('d-none');
+                        document.getElementById('searchCattleInput').value = '';
+                        currentCattleId = null;
+                        fetchAliveCattles(); // Refresh dropdown
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function escapeJsStr(str) {
+            return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        function fetchStock() {
+            fetch('api/admin.php?action=get_inventory_stock')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('stock-tbody');
+                    if (data.status === 'success') {
+                        tbody.innerHTML = '';
+                        let totalKg = 0;
+                        let totalVal = 0;
+
+                        // กรองข้อมูลให้แสดงผลเพียง 1 ครั้งต่อชื่อชิ้นส่วนเนื้อ ป้องกันรายการซ้ำ
+                        const uniqueMap = new Map();
+                        (data.data || []).forEach(item => {
+                            if (item && item.name && !uniqueMap.has(item.name)) {
+                                uniqueMap.set(item.name, item);
+                            }
+                        });
+                        currentStockData = Array.from(uniqueMap.values());
+                        productsList = currentStockData;
+                        refreshPartDropdowns();
+
+                        if (currentStockData.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="fas fa-box-open fa-2x mb-2 d-block"></i>
+                                        ยังไม่มีรายการชิ้นส่วนเนื้อในระบบ กรุณากดปุ่ม "เพิ่มชิ้นส่วนเนื้อใหม่"
+                                    </td>
+                                </tr>
+                            `;
+                        } else {
+                            currentStockData.forEach(item => {
+                                const kg = parseFloat(item.stock_kg) || 0;
+                                const price = parseFloat(item.price_per_kg) || 0;
+                                const wholesale = parseFloat(item.price_wholesale) || price;
+                                const imgUrl = item.image_url ? item.image_url : 'assets/img/logo.jpg';
+                                let displayKg = Math.max(0, Math.round(kg));
+                                const val = displayKg * price;
+                                totalKg += displayKg;
+                                totalVal += val;
+
+                                let statusBadge = displayKg > 10
+                                    ? '<span class="badge bg-success">ปกติ (พร้อมขาย)</span>'
+                                    : (displayKg > 0
+                                        ? '<span class="badge bg-warning text-dark">ใกล้หมด</span>'
+                                        : '<span class="badge bg-danger">สินค้าหมด</span>');
+
+                                const safeName = escapeJsStr(item.name);
+                                const unit = item.unit || 'กก.';
+                                const descHtml = item.description ? `<small class="text-muted d-block">${item.description}</small>` : '';
+                                const isWholesaleEnabled = (item.is_wholesale === undefined || item.is_wholesale === null || parseInt(item.is_wholesale) === 1);
+                                const discountedWholesalePrice = Math.round(price * 0.90);
+                                const wholesaleHtml = isWholesaleEnabled
+                                    ? `<small class="text-success d-block">ขายส่ง ฿${discountedWholesalePrice.toLocaleString()}</small>`
+                                    : `<small class="text-muted d-block"><i class="fas fa-ban me-1 text-danger"></i>ไม่เปิดขายส่ง</small>`;
+
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td class="ps-4">
+                                        <img src="${imgUrl}" alt="${item.name}" class="cut-thumb" onerror="this.src='assets/img/logo.jpg';">
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-dark">${item.name}</span>
+                                        ${descHtml}
+                                    </td>
+                                    <td class="text-center fw-bold ${displayKg > 0 ? 'text-primary-custom' : 'text-danger'}">${displayKg.toLocaleString()} ${unit}</td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold">฿${price.toLocaleString()} / ${unit}</span>
+                                        ${wholesaleHtml}
+                                    </td>
+                                    <td class="text-center">฿${val.toLocaleString()}</td>
+                                    <td class="text-center">${statusBadge}</td>
+                                    <td class="text-center pe-4">
+                                        <div class="d-inline-flex gap-1">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" title="ปรับปรุงสต๊อก" onclick="openEditStockModal(${item.id}, '${safeName}', ${displayKg}, '${unit}')">
+                                                <i class="fas fa-pen"></i> สต๊อก
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="ลบชิ้นส่วนออกจากหน้าเว็บ" onclick="confirmDeleteProduct(${item.id}, '${safeName}')">
+                                                <i class="fas fa-trash-alt"></i> ลบ
+                                            </button>
+                                        </div>
+                                    </td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        }
+
+                        const totalKgText = Math.round(totalKg).toLocaleString() + ' กก./ชิ้น';
+                        const totalValText = '฿' + totalVal.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+                        document.getElementById('stock-total-kg').innerText = totalKgText;
+                        document.getElementById('stock-total-val').innerText = totalValText;
+                        document.getElementById('summary-parts-count').innerText = currentStockData.length;
+                        document.getElementById('summary-total-kg').innerText = totalKgText;
+                        document.getElementById('summary-total-val').innerText = totalValText;
+                    }
+                });
+        }
+
+        function openAddProductModal() {
+            document.getElementById('addProductForm').reset();
+            document.getElementById('newProductImgPreview').classList.add('d-none');
+            document.getElementById('newProductImgPlaceholder').classList.remove('d-none');
+            document.getElementById('wsOptionEnable').checked = true;
+            toggleWholesaleOption();
+            updateWholesalePreview();
+            const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
+            modal.show();
+        }
+
+        function toggleWholesaleOption() {
+            const isEnabled = document.getElementById('wsOptionEnable').checked;
+            const wsPriceWrapper = document.getElementById('wholesalePriceWrapper');
+            if (isEnabled) {
+                wsPriceWrapper.classList.remove('d-none');
+                updateWholesalePreview();
+            } else {
+                wsPriceWrapper.classList.add('d-none');
+            }
+        }
+
+        function updateWholesalePreview() {
+            const retailVal = parseFloat(document.getElementById('productRetailPriceInput').value) || 0;
+            const unitEl = document.getElementById('productUnitSelect');
+            const unit = unitEl ? unitEl.value : 'กก.';
+            const previewEl = document.getElementById('wholesaleCalculatedDisplay');
+            if (!previewEl) return;
+            if (retailVal > 0) {
+                const wsVal = Math.round(retailVal * 0.90);
+                previewEl.innerHTML = `ราคาขายส่ง (สั่ง 25 กก. ขึ้นไป ลด 10% จากราคาปลีก): <strong class="text-success">฿${wsVal.toLocaleString('th-TH')} / ${unit}</strong>`;
+            } else {
+                previewEl.innerHTML = `เมื่อสั่งซื้อ 25 กก. ขึ้นไป ระบบจะคำนวณลด <strong>10%</strong> จากราคาขายปลีกโดยอัตโนมัติ`;
+            }
+        }
+
+        function previewNewProductImage(input) {
+            const preview = document.getElementById('newProductImgPreview');
+            const placeholder = document.getElementById('newProductImgPlaceholder');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('d-none');
+                    placeholder.classList.add('d-none');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = '';
+                preview.classList.add('d-none');
+                placeholder.classList.remove('d-none');
+            }
+        }
+
+        function saveNewProduct() {
+            const name = document.getElementById('productNameInput').value.trim();
+            const priceRetail = document.getElementById('productRetailPriceInput').value;
+            const unit = document.getElementById('productUnitSelect').value || 'กก.';
+            const isWholesale = document.getElementById('wsOptionEnable').checked ? '1' : '0';
+            const description = document.getElementById('productDescInput').value.trim();
+            const imageInput = document.getElementById('productImageInput');
+
+            if (!name) {
+                alert('กรุณากรอกชื่อชิ้นส่วนเนื้อ');
+                return;
+            }
+            if (!priceRetail || parseFloat(priceRetail) <= 0) {
+                alert('กรุณากรอกราคาขายปลีกให้ถูกต้อง');
+                return;
+            }
+
+            const calculatedWholesale = isWholesale === '1' ? (parseFloat(priceRetail) * 0.90).toFixed(2) : '0';
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('price_retail', priceRetail);
+            formData.append('unit', unit);
+            formData.append('is_wholesale', isWholesale);
+            formData.append('price_wholesale', calculatedWholesale);
+            formData.append('description', description);
+            if (imageInput.files && imageInput.files[0]) {
+                formData.append('image', imageInput.files[0]);
+            }
+
+            const btn = document.getElementById('btnSaveNewProduct');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> กำลังบันทึก...';
+
+            fetch('api/admin.php?action=add_product', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = origText;
+                    if (data.status === 'success') {
+                        alert(`เพิ่มชิ้นส่วนเนื้อ "${name}" เข้าสู่ระบบเรียบร้อยแล้ว สามารถเลือกชิ้นส่วนนี้ในหน้าแปลงสภาพโคเนื้อได้ทันที`);
+                        const modalEl = document.getElementById('addProductModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                        fetchStock();
+                    } else {
+                        alert('ไม่สามารถเพิ่มชิ้นส่วนเนื้อได้: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = origText;
+                    console.error(err);
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อระบบ');
+                });
+        }
+
+        function confirmDeleteProduct(id, name) {
+            if (!confirm(`คุณต้องการลบชิ้นส่วนเนื้อ "${name}" ออกจากระบบและหน้าเว็บไซต์ใช่หรือไม่?`)) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('product_id', id);
+
+            fetch('api/admin.php?action=delete_product', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(`ลบชิ้นส่วนเนื้อ "${name}" เรียบร้อยแล้ว`);
+                        fetchStock();
+                    } else {
+                        alert('ไม่สามารถลบชิ้นส่วนเนื้อได้: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+                });
+        }
+
+        let currentEditProductId = null;
+
+        function openEditStockModal(id, name, currentStock, unit = 'กก.') {
+            currentEditProductId = id;
+            document.getElementById('editStockName').innerText = name;
+            document.getElementById('editStockInput').value = currentStock;
+            const labelEl = document.querySelector('label[for="editStockInput"]');
+            if (labelEl) labelEl.innerText = `จำนวนคงเหลือ (${unit})`;
+
+            var modal = new bootstrap.Modal(document.getElementById('editStockModal'));
+            modal.show();
+        }
+
+        function saveStockEdit() {
+            if (!currentEditProductId) return;
+            const newStock = document.getElementById('editStockInput').value;
+            if (newStock === '' || newStock < 0) {
+                alert('กรุณากรอกจำนวนให้ถูกต้อง');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('product_id', currentEditProductId);
+            formData.append('stock_kg', newStock);
+
+            fetch('api/admin.php?action=update_inventory_stock', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('อัปเดตจำนวนสต๊อกเรียบร้อยแล้ว');
+                        var modal = bootstrap.Modal.getInstance(document.getElementById('editStockModal'));
+                        modal.hide();
+                        fetchStock(); // Refresh UI
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function exportToExcel() {
+            if (!currentStockData || currentStockData.length === 0) {
+                alert('ไม่มีข้อมูลสำหรับส่งออก');
+                return;
+            }
+
+            const exportData = currentStockData.map(item => {
+                const kg = Math.round(parseFloat(item.stock_kg) || 0);
+                const price = parseFloat(item.price_per_kg);
+                const val = kg * price;
+                let status = kg > 10 ? 'ปกติ' : (kg > 0 ? 'ใกล้หมด' : 'สินค้าหมด');
+
+                return {
+                    'รายการชิ้นส่วนเนื้อ': item.name,
+                    'คงเหลือ (กก.)': kg,
+                    'ราคาขายปลีก/กก. (บาท)': price,
+                    'มูลค่าคงเหลือโดยประมาณ (บาท)': val,
+                    'สถานะ': status
+                };
+            });
+
+            // Add Total Row
+            const totalKg = exportData.reduce((sum, row) => sum + row['คงเหลือ (กก.)'], 0);
+            const totalVal = exportData.reduce((sum, row) => sum + row['มูลค่าคงเหลือโดยประมาณ (บาท)'], 0);
+
+            exportData.push({
+                'รายการชิ้นส่วนเนื้อ': 'รวมทั้งหมด',
+                'คงเหลือ (กก.)': totalKg,
+                'ราคาขายปลีก/กก. (บาท)': null,
+                'มูลค่าคงเหลือโดยประมาณ (บาท)': totalVal,
+                'สถานะ': ''
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory Stock");
+
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `JN_Inventory_Stock_${dateStr}.xlsx`);
+        }
+    </script>
+
+    <!-- Add New Meat Cut Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary-custom text-white">
+                    <h5 class="modal-title text-secondary-custom"><i
+                            class="fas fa-plus-circle me-2"></i>เพิ่มชิ้นส่วนเนื้อใหม่ (แสดงหน้าเว็บ)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="addProductForm" onsubmit="event.preventDefault(); saveNewProduct();">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">รูปภาพชิ้นส่วนเนื้อ <small
+                                    class="text-muted fw-normal">(แสดงในหน้าสั่งซื้อสินค้า)</small></label>
+                            <div class="image-preview-box mb-2"
+                                onclick="document.getElementById('productImageInput').click()">
+                                <img id="newProductImgPreview" src="" alt="Preview" class="d-none">
+                                <div id="newProductImgPlaceholder" class="text-center text-muted p-3">
+                                    <i class="fas fa-camera fa-2x mb-2 text-secondary"></i>
+                                    <div class="small">คลิกเพื่อเลือกรูปภาพชิ้นส่วนเนื้อ (JPG, PNG, WEBP)</div>
+                                </div>
+                            </div>
+                            <input type="file" class="form-control form-control-sm" id="productImageInput"
+                                accept="image/*" onchange="previewNewProductImage(this)">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="productNameInput" class="form-label fw-bold">ชื่อชิ้นส่วนเนื้อ <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="productNameInput"
+                                placeholder="เช่น เนื้อใบพาย, เนื้อริบอาย, หางวัว" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="productRetailPriceInput" class="form-label fw-bold">ราคาขายปลีก <span
+                                    class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">฿</span>
+                                <input type="number" class="form-control" id="productRetailPriceInput" min="1" step="1"
+                                    placeholder="เช่น 320" oninput="updateWholesalePreview()" required>
+                                <select class="form-select fw-semibold bg-light" id="productUnitSelect"
+                                    style="max-width: 135px;" onchange="updateWholesalePreview()">
+                                    <option value="กก." selected>ต่อ กก.</option>
+                                    <option value="ชิ้น">ต่อชิ้น</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold d-block mb-2">การจำหน่ายราคาส่ง (สั่งซื้อล่วงหน้า)</label>
+                            <div class="d-flex flex-wrap gap-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="wholesaleOption"
+                                        id="wsOptionEnable" value="1" checked onchange="toggleWholesaleOption()">
+                                    <label class="form-check-label fw-semibold text-success" for="wsOptionEnable">
+                                        เปิดขายส่ง
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="wholesaleOption"
+                                        id="wsOptionDisable" value="0" onchange="toggleWholesaleOption()">
+                                    <label class="form-check-label fw-semibold text-danger" for="wsOptionDisable">
+                                        ไม่เปิดขายส่ง (ชิ้นส่วนมีจำนวนจำกัด)
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="wholesalePriceWrapper" class="mt-2 pt-2 border-top small text-muted">
+                                <i class="fas fa-tags me-1 text-success"></i>
+                                <span id="wholesaleCalculatedDisplay">เมื่อสั่งซื้อ 25 กก. ขึ้นไป ระบบจะคำนวณลด
+                                    <strong>10%</strong> จากราคาขายปลีกโดยอัตโนมัติ</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="productDescInput" class="form-label fw-bold">คำอธิบายสั้นๆ (ถ้ามี)</label>
+                            <input type="text" class="form-control" id="productDescInput"
+                                placeholder="เช่น เนื้อนุ่มแทรกมัน เหมาะย่าง">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-secondary-custom fw-bold" id="btnSaveNewProduct"
+                        onclick="saveNewProduct()">
+                        <i class="fas fa-save me-1"></i> บันทึกและแสดงบนหน้าเว็บ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Stock Modal -->
+    <div class="modal fade" id="editStockModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary-custom text-white">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>แก้ไขจำนวนสต๊อก</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <h6 class="fw-bold mb-3" id="editStockName">รายการเนื้อ</h6>
+                    <div class="form-floating mb-3">
+                        <input type="number" class="form-control" id="editStockInput" min="0" step="1">
+                        <label for="editStockInput">จำนวนคงเหลือ (กิโลกรัม)</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-secondary-custom"
+                        onclick="saveStockEdit()">บันทึกการเปลี่ยนแปลง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

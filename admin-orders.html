@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>จัดการคำสั่งซื้อ - Admin Panel</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background-color: var(--dark-bg);
+            color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 12px 20px;
+            display: block;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--secondary-color);
+            border-left-color: var(--secondary-color);
+        }
+
+        .admin-header {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .status-timeline::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #e9ecef;
+            z-index: 1;
+        }
+
+        .status-timeline.no-line::before,
+        .status-timeline:has(.alert)::before {
+            display: none !important;
+        }
+
+        .timeline-step {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            width: 25%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timeline-step:hover .timeline-icon {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            border: 2px solid white;
+        }
+
+        .timeline-step.active .timeline-icon {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .timeline-step.completed .timeline-icon {
+            background-color: #198754;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar" style="width: 250px;">
+            <div class="p-3 text-center border-bottom border-secondary">
+                <img src="assets/img/logo.jpg" alt="Logo" height="60" class="rounded-circle mb-2 bg-white p-1"
+                    onerror="this.src='https://via.placeholder.com/60/610C10/D4AF37?text=JN';">
+                <h5 class="text-secondary-custom font-heading mb-0">ระบบจัดการ จ้าวเนื้อ๑</h5>
+            </div>
+            <div class="py-3">
+                <a href="admin-dashboard.html"><i class="fas fa-chart-line me-2"></i> แดชบอร์ด & รายงาน</a>
+                <a href="admin-orders.html" class="active"><i class="fas fa-shopping-bag me-2"></i> จัดการคำสั่งซื้อ
+                    <span id="menu-orders-badge" class="badge bg-danger rounded-pill float-end"
+                        style="display:none;">0</span></a>
+                <a href="admin-farm.html"><i class="fas fa-tractor me-2"></i> ทะเบียนฟาร์มโค</a>
+                <a href="admin-purchase.html"><i class="fas fa-hand-holding-usd me-2"></i> รับซื้อโคเข้าฟาร์ม</a>
+                <a href="admin-inventory.html"><i class="fas fa-boxes me-2"></i> คลังสินค้า & แปลงสภาพ</a>
+                <a href="api/auth.php?action=logout" class="mt-5 text-danger"
+                    onclick="return confirm('คุณต้องการออกจากระบบใช่หรือไม่?');"><i
+                        class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow-1">
+            <!-- Header -->
+            <div class="admin-header p-3 d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0 text-primary-custom font-heading">จัดการคำสั่งซื้อของลูกค้า</h4>
+            </div>
+
+            <div class="container-fluid px-4">
+
+                <!-- Filters -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <select id="filter-status" class="form-select form-select-sm">
+                                    <option value="" selected>สถานะทั้งหมด</option>
+                                    <option value="pending_payment">ตรวจสอบการชำระเงิน / มัดจำ</option>
+                                    <option value="preparing">กำลังจัดเตรียม / จัดเตรียมสินค้า</option>
+                                    <option value="awaiting_final_payment">รอชำระเงินอีก 50%</option>
+                                    <option value="verifying_final_payment">ตรวจสอบชำระเงินอีก 50%</option>
+                                    <option value="ready_for_pickup">รอรับที่หน้าร้าน</option>
+                                    <option value="shipped">จัดส่งแล้ว</option>
+                                    <option value="completed">รับสินค้าสำเร็จ / จัดส่งสำเร็จ</option>
+                                    <option value="cancelled">ยกเลิก</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="filter-search" class="form-control"
+                                        placeholder="รหัสคำสั่งซื้อ หรือชื่อลูกค้า">
+                                    <button id="btn-search" class="btn btn-outline-secondary" type="button"><i
+                                            class="fas fa-search"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="awaiting-payment-alert-container"></div>
+
+                <!-- Orders Table -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">รหัสคำสั่งซื้อ</th>
+                                        <th>วันที่/เวลา</th>
+                                        <th>ชื่อลูกค้า</th>
+                                        <th>ยอดชำระสุทธิ</th>
+                                        <th>สถานะ</th>
+                                        <th class="text-center" style="width: 100px;">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-tbody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title text-primary-custom fw-bold">รายละเอียดคำสั่งซื้อ #ORD-2608-105</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+
+                    <!-- Status Timeline -->
+                    <div id="modalTimelineContainer"></div>
+
+                    <!-- Wholesale Delivery / Pickup Date Banner (วันที่รับสินค้าหรือต้องจัดส่ง) -->
+                    <div id="modalDeliveryDateContainer"></div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 border-end">
+                            <h6 class="fw-bold">ข้อมูลลูกค้าและที่อยู่จัดส่ง</h6>
+                            <p class="mb-1"><strong>คุณสมชาย รักเนื้อ</strong> (081-234-5678)</p>
+                            <p class="text-muted small">123/45 ถนนมิตรภาพ ตำบลในเมือง<br>อำเภอเมือง จังหวัดขอนแก่น 40000
+                            </p>
+                        </div>
+                        <div class="col-md-6 ps-4">
+                            <h6 class="fw-bold">หลักฐานการชำระเงิน</h6>
+                            <div class="d-flex align-items-center">
+                                <a href="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png"
+                                    target="_blank" class="me-3">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png"
+                                        alt="Slip" style="height: 100px; border: 1px solid #ccc; padding: 2px;">
+                                </a>
+                                <div>
+                                    <p class="mb-1 small">โอนผ่าน: พร้อมเพย์</p>
+                                    <p class="mb-1 small">เวลาโอน: 13 ส.ค. 2026, 10:35 น.</p>
+                                    <p class="mb-0 fw-bold text-primary-custom">ยอดโอน: ฿2,500.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold mb-2" id="orderItemsHeaderTitle">รายการสินค้า</h6>
+                    <div id="orderStockSummaryAlert"></div>
+                    <table class="table table-bordered table-sm mb-0">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th>รายการ</th>
+                                <th>ราคา/กก.</th>
+                                <th>จำนวน(กก.)</th>
+                                <th>รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>เนื้อริบอาย (Ribeye)</td>
+                                <td class="text-center">฿850</td>
+                                <td class="text-center">1</td>
+                                <td class="text-end">฿850</td>
+                            </tr>
+                            <tr>
+                                <td>เนื้อสันนอก (Striploin)</td>
+                                <td class="text-center">฿750</td>
+                                <td class="text-center">2</td>
+                                <td class="text-end">฿1,500</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">ยอดรวมสินค้า:</td>
+                                <td class="text-end">฿2,350</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">ค่าจัดส่ง (ควบคุมอุณหภูมิ):</td>
+                                <td class="text-end">฿150</td>
+                            </tr>
+                            <tr class="table-light text-primary-custom">
+                                <td colspan="3" class="text-end fw-bold fs-6">ยอดรวมทั้งสิ้น:</td>
+                                <td class="text-end fw-bold fs-6">฿2,500</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-danger me-auto">ยกเลิกคำสั่งซื้อ</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-success" onclick="approveOrder()"><i
+                            class="fas fa-check-circle me-1"></i> อนุมัติการชำระเงิน (เปลี่ยนสถานะเป็น
+                        กำลังจัดเตรียม)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับกรอกน้ำหนักจริง -->
+    <div class="modal fade" id="actualWeightModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-primary-custom">บันทึกน้ำหนักจริง</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="actualWeightForm">
+                        <input type="hidden" id="aw_order_id">
+                        <div id="aw_items_container"></div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-success" onclick="saveActualWeights()"><i
+                            class="fas fa-save me-1"></i> บันทึกข้อมูลและแจ้งยอดลูกค้า</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับกรอกเลขพัสดุ (Tracking Number) เมื่อจัดส่งสินค้า -->
+    <div class="modal fade" id="trackingNumberModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header text-white" style="background-color: var(--primary-color);">
+                    <h5 class="modal-title fw-bold"><i
+                            class="fas fa-shipping-fast me-2"></i>บันทึกเลขพัสดุและจัดส่งสินค้า</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="trackingOrderSummary" class="mb-3 p-3 bg-light rounded border"></div>
+                    <form id="trackingForm" onsubmit="submitTrackingNumber(event)">
+                        <input type="hidden" id="tracking_order_id">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">บริษัทขนส่ง</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i
+                                        class="fas fa-truck-moving text-primary"></i></span>
+                                <input type="text" class="form-control" id="tracking_courier"
+                                    value="Inter Express Logistics (ขนส่งควบคุมอุณหภูมิ)" readonly>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">หมายเลขพัสดุ (Tracking Number) <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-lg border-primary"
+                                id="input_tracking_number" placeholder="เช่น IEL12345678TH หรือ KEX0012345" required
+                                autocomplete="off">
+                            <div class="form-text text-muted mt-2"><i
+                                    class="fas fa-bell me-1 text-warning"></i>ระบบจะส่งข้อความแจ้งเตือนเลขพัสดุนี้ให้ลูกค้าผ่าน
+                                LINE และ Email ทันที</div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">ยกเลิก</button>
+                            <button type="submit" class="btn btn-success fw-bold px-4 shadow-sm"
+                                id="btnSubmitTracking"><i class="fas fa-check-circle me-1"></i>
+                                ยืนยันการจัดส่งสินค้า</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับระบุเหตุผลในการยกเลิกคำสั่งซื้อ -->
+    <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>ยกเลิกคำสั่งซื้อ
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="cancelOrderSummary" class="mb-3 p-3 bg-light rounded border"></div>
+                    <form id="cancelOrderForm" onsubmit="submitCancelOrder(event)">
+                        <input type="hidden" id="cancel_order_id">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">ระบุเหตุผลที่ยกเลิกคำสั่งซื้อ <span
+                                    class="text-danger">*</span></label>
+                            <textarea class="form-control" id="input_cancel_reason" rows="3"
+                                placeholder="เช่น สินค้าหมดชั่วคราว, สลิปโอนเงินไม่ถูกต้อง, ลูกค้าขอยกเลิก เป็นต้น"
+                                required></textarea>
+                            <div class="form-text text-muted mt-2"><i
+                                    class="fas fa-bell me-1 text-danger"></i>ระบบจะส่งข้อความแจ้งเตือนเหตุผลนี้ให้ลูกค้าทราบผ่าน
+                                LINE หรือ Email ทันที</div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">ปิด</button>
+                            <button type="submit" class="btn btn-danger fw-bold px-4 shadow-sm" id="btnSubmitCancel"><i
+                                    class="fas fa-times-circle me-1"></i> ยืนยันยกเลิกคำสั่งซื้อ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/admin-notifications.js"></script>
+    <script>
+        let allOrdersData = [];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchOrders();
+            setInterval(fetchOrders, 30000); // Auto refresh every 30s
+
+            // Attach event listeners for filters
+            document.getElementById('filter-status').addEventListener('change', renderOrders);
+            document.getElementById('filter-search').addEventListener('input', renderOrders);
+            document.getElementById('btn-search').addEventListener('click', renderOrders);
+        });
+
+        function fetchOrders() {
+            fetch('api/admin.php?action=get_orders')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        allOrdersData = data.data || [];
+                        renderOrders();
+                    } else {
+                        document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่สามารถโหลดข้อมูลได้</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-tbody');
+            const statusFilter = document.getElementById('filter-status').value;
+            const searchFilter = document.getElementById('filter-search').value.toLowerCase().trim();
+
+            // Display alerts for orders awaiting final payment
+            const alertContainer = document.getElementById('awaiting-payment-alert-container');
+            if (alertContainer) {
+                const awaitingOrders = allOrdersData.filter(o => o.status === 'awaiting_final_payment' || o.status === 'verifying_final_payment');
+                let alertHtml = '';
+                awaitingOrders.forEach(o => {
+                    const statusText = o.status === 'awaiting_final_payment' ? 'รอชำระเงินส่วนที่เหลือ' : 'แนบสลิปแล้ว รอตรวจสอบสลิปใบที่ 2';
+                    const icon = o.status === 'awaiting_final_payment' ? 'fa-hourglass-half' : 'fa-receipt';
+                    const color = o.status === 'awaiting_final_payment' ? 'warning' : 'info';
+                    alertHtml += `
+                        <div class="alert alert-${color} border-0 shadow-sm d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <i class="fas ${icon} me-2 text-dark"></i>
+                                <strong>แจ้งเตือน:</strong> มีคำสั่งซื้อขายส่ง <a href="#" onclick="viewOrder(${o.id}); return false;" class="alert-link fw-bold">#ORD-${String(o.id).padStart(4, '0')}</a> สถานะ: ${statusText}
+                            </div>
+                            <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm" onclick="viewOrder(${o.id})">จัดการคำสั่งซื้อนี้</button>
+                        </div>
+                    `;
+                });
+                alertContainer.innerHTML = alertHtml;
+            }
+
+            let filtered = allOrdersData;
+
+            if (statusFilter) {
+                filtered = filtered.filter(order => order.status === statusFilter);
+            }
+            if (searchFilter) {
+                filtered = filtered.filter(order => {
+                    const orderIdStr = String(order.id).padStart(4, '0');
+                    const fullOrderIdStr = 'ord-' + orderIdStr;
+                    const customerName = (order.username || '') + ' ' + (order.first_name || '') + ' ' + (order.last_name || '');
+
+                    return customerName.toLowerCase().includes(searchFilter) ||
+                        orderIdStr.includes(searchFilter) ||
+                        fullOrderIdStr.includes(searchFilter);
+                });
+            }
+
+            if (filtered.length > 0) {
+                tbody.innerHTML = '';
+                filtered.forEach(order => {
+                    let statusBadge = '';
+                    let isPickup = (order.shipping_address && (order.shipping_address.includes('รับที่หน้าร้าน') || order.shipping_address.startsWith('รับที่หน้าร้าน')));
+                    let isPayAtStore = (order.slip_image_url === 'pay_at_store');
+                    let isWholesale = (order.order_type === 'wholesale');
+
+                    // ==========================================
+                    // แสดงป้ายสถานะตามคำสั่งซื้อปลีก และ ขายส่ง (รับหน้าร้าน / จัดส่ง)
+                    // ==========================================
+                    if (isWholesale) {
+                        // คำสั่งซื้อส่ง (Wholesale - ชำระมัดจำ 50%)
+                        switch (order.status) {
+                            case 'pending_payment':
+                            case 'processing':
+                                statusBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-receipt me-1"></i> ตรวจสอบชำระเงินมัดจำ</span>';
+                                break;
+                            case 'preparing':
+                                statusBadge = '<span class="badge bg-info text-dark"><i class="fas fa-boxes me-1"></i> กำลังจัดเตรียม</span>';
+                                break;
+                            case 'awaiting_final_payment':
+                                statusBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half me-1"></i> รอชำระเงินอีก 50%</span>';
+                                break;
+                            case 'verifying_final_payment':
+                                statusBadge = '<span class="badge bg-info text-dark"><i class="fas fa-receipt me-1"></i> ตรวจสอบชำระเงินอีก 50%</span>';
+                                break;
+                            case 'shipped':
+                            case 'ready_for_pickup':
+                                statusBadge = isPickup
+                                    ? `<span class="badge bg-primary"><i class="fas fa-store me-1"></i> รอรับที่หน้าร้าน</span>`
+                                    : `<span class="badge bg-primary"><i class="fas fa-truck me-1"></i> จัดส่งแล้ว</span>`;
+                                break;
+                            case 'completed':
+                                statusBadge = isPickup
+                                    ? '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> รับสินค้าสำเร็จ</span>'
+                                    : '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> จัดส่งสำเร็จ</span>';
+                                break;
+                            case 'cancelled':
+                                statusBadge = '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i> ยกเลิก</span>';
+                                break;
+                            default:
+                                statusBadge = `<span class="badge bg-secondary">${order.status || 'รอดำเนินการ'}</span>`;
+                        }
+                    } else {
+                        // คำสั่งซื้อปลีก (Retail - ตัดสต็อกหน้าร้านทันที)
+                        switch (order.status) {
+                            case 'pending_payment':
+                            case 'processing':
+                                statusBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half me-1"></i> ตรวจสอบชำระเงิน</span>';
+                                break;
+                            case 'preparing':
+                                statusBadge = '<span class="badge bg-info text-dark"><i class="fas fa-box-open me-1"></i> กำลังจัดเตรียม</span>';
+                                break;
+                            case 'shipped':
+                            case 'ready_for_pickup':
+                                statusBadge = isPickup
+                                    ? `<span class="badge bg-primary"><i class="fas fa-store me-1"></i> รอรับที่หน้าร้าน</span>`
+                                    : `<span class="badge bg-primary"><i class="fas fa-truck me-1"></i> จัดส่งแล้ว</span>`;
+                                break;
+                            case 'completed':
+                                statusBadge = isPickup
+                                    ? '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> รับสินค้าสำเร็จ</span>'
+                                    : '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> จัดส่งสำเร็จ</span>';
+                                break;
+                            case 'cancelled':
+                                statusBadge = '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i> ยกเลิก</span>';
+                                break;
+                            default:
+                                statusBadge = `<span class="badge bg-secondary">${order.status || 'รอดำเนินการ'}</span>`;
+                        }
+                    }
+
+                    const customerDisplayName = [order.first_name, order.last_name].filter(Boolean).join(' ') || order.username;
+                    const d = new Date(String(order.created_at).replace(' ', 'T'));
+                    const formattedDate = !isNaN(d.getTime())
+                        ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+                        : order.created_at;
+
+                    const wsDateObj = isWholesale ? formatWholesaleDeliveryDate(order.delivery_date, order.created_at) : null;
+                    const wsDateBadge = wsDateObj && wsDateObj.short ? `
+                        <div class="mt-1">
+                            <span class="badge bg-warning text-dark border border-warning shadow-sm" style="font-size: 0.75rem;" title="${isPickup ? 'วันที่ลูกค้านัดรับสินค้าหน้าร้าน' : 'วันที่ต้องจัดส่งสินค้าให้ลูกค้า'}">
+                                <i class="fas fa-calendar-alt me-1 text-danger"></i>${isPickup ? 'วันรับสินค้า:' : 'ต้องจัดส่ง:'} <strong>${wsDateObj.short}</strong>
+                            </span>
+                        </div>
+                    ` : '';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="ps-4 fw-bold">#ORD-${String(order.id).padStart(4, '0')}</td>
+                        <td>
+                            <div>${formattedDate}</div>
+                            ${wsDateBadge}
+                        </td>
+                        <td>${customerDisplayName}</td>
+                        <td class="text-primary-custom fw-bold">฿${parseFloat(order.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                        <td>
+                            ${statusBadge}
+                            ${order.tracking_number ? `<div class="small text-primary mt-1"><i class="fas fa-truck me-1"></i><strong>${order.tracking_number}</strong></div>` : ''}
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-info shadow-sm px-3" onclick="viewOrder(${order.id})" title="ดูรายละเอียดคำสั่งซื้อ"><i class="fas fa-eye"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบรายการคำสั่งซื้อที่ตรงกับเงื่อนไข</td></tr>';
+            }
+        }
+
+        function formatWholesaleDeliveryDate(dateStr, createdAtStr) {
+            let raw = (dateStr !== undefined && dateStr !== null) ? String(dateStr).trim() : '';
+            let d = null;
+
+            // Check for zero / corrupted / placeholder dates
+            let isZeroDate = (!raw || raw === '0000-00-00' || raw.startsWith('0000') || raw.startsWith('1899') || raw === '30/11/1899' || raw === '00/00/0000');
+
+            if (!isZeroDate) {
+                let dateOnly = raw.split(' ')[0].trim();
+                if (dateOnly.includes('-')) {
+                    let p = dateOnly.split('-');
+                    if (p.length === 3) {
+                        if (p[0].length === 4) {
+                            // YYYY-MM-DD
+                            let year = parseInt(p[0], 10);
+                            let month = parseInt(p[1], 10);
+                            let day = parseInt(p[2], 10);
+                            if (year >= 2020 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                                d = new Date(year, month - 1, day);
+                            }
+                        } else if (p[2].length === 4) {
+                            // DD-MM-YYYY
+                            let day = parseInt(p[0], 10);
+                            let month = parseInt(p[1], 10);
+                            let year = parseInt(p[2], 10);
+                            if (year > 2400) year -= 543;
+                            if (month > 12 && day <= 12) {
+                                let tmp = day; day = month; month = tmp;
+                            }
+                            if (year >= 2020 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                                d = new Date(year, month - 1, day);
+                            }
+                        }
+                    }
+                } else if (dateOnly.includes('/')) {
+                    let parts = dateOnly.split('/');
+                    if (parts.length === 3) {
+                        let p0 = parseInt(parts[0], 10);
+                        let p1 = parseInt(parts[1], 10);
+                        let year = parseInt(parts[2], 10);
+                        if (year > 2400) year -= 543;
+                        let day = p0;
+                        let month = p1;
+                        if (p1 > 12 && p0 <= 12) {
+                            day = p1;
+                            month = p0;
+                        }
+                        if (year >= 2020 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                            d = new Date(year, month - 1, day);
+                        }
+                    }
+                }
+            }
+
+            // Fallback: If d is null or year is outside valid modern era (year < 2020)
+            if (!d || isNaN(d.getTime()) || d.getFullYear() < 2020) {
+                if (createdAtStr) {
+                    let cd = new Date(String(createdAtStr).replace(' ', 'T'));
+                    if (!isNaN(cd.getTime())) {
+                        d = new Date(cd.getTime());
+                        d.setDate(d.getDate() + 3);
+                    }
+                }
+            }
+
+            // Fallback to today + 3 days if still missing
+            if (!d || isNaN(d.getTime()) || d.getFullYear() < 2020) {
+                d = new Date();
+                d.setDate(d.getDate() + 3);
+            }
+
+            const thaiMonths = [
+                'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+            ];
+            const thaiDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+            const dayName = thaiDays[d.getDay()];
+            const thaiYear = d.getFullYear() > 2500 ? d.getFullYear() : d.getFullYear() + 543;
+            const formattedFull = `${dayName}ที่ ${d.getDate()} ${thaiMonths[d.getMonth()]} พ.ศ. ${thaiYear}`;
+            const formattedShort = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+            return {
+                full: formattedFull,
+                short: formattedShort,
+                day: d.getDate(),
+                month: thaiMonths[d.getMonth()],
+                year: thaiYear,
+                dayName: dayName,
+                raw: raw,
+                iso: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+            };
+        }
+
+        function adminEditDeliveryDate(orderId, currentDate) {
+            let newDate = prompt('กรุณาระบุวันที่จัดส่ง/รับสินค้าใหม่ (วัน/เดือน/ปี เช่น 04/11/2026):', currentDate);
+            if (!newDate || newDate.trim() === '' || newDate.trim() === currentDate) return;
+
+            let formData = new FormData();
+            formData.append('action', 'update_delivery_date');
+            formData.append('order_id', orderId);
+            formData.append('delivery_date', newDate.trim());
+
+            fetch('api/admin.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        alert('อัปเดตวันที่สำเร็จ');
+                        loadOrders();
+                        viewOrder(orderId);
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + (res.message || 'ไม่สามารถแก้ไขได้'));
+                    }
+                })
+                .catch(err => {
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function viewOrder(orderId) {
+            fetch('api/admin.php?action=get_order_details&id=' + orderId)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const order = data.order;
+                        const items = data.items || [];
+                        const payment = data.payment;
+
+                        // Update Modal Title
+                        document.querySelector('#orderDetailModal .modal-title').textContent = `รายละเอียดคำสั่งซื้อ #ORD-${String(order.id).padStart(4, '0')}`;
+
+                        const isWholesale = (order.order_type === 'wholesale');
+                        const isPickup = (order.shipping_address && (order.shipping_address.includes('รับที่หน้าร้าน') || order.shipping_address.startsWith('รับที่หน้าร้าน')));
+                        const isPayAtStore = payment && payment.slip_image_url === 'pay_at_store';
+                        const isWholesaleUnconfirmed = isWholesale && (parseInt(order.stock_deducted || 0) === 0) && order.status !== 'cancelled';
+
+                        // ==========================================
+                        // Render Dynamic Status Timeline (ปลีก/ส่ง & รับหน้าร้าน/จัดส่ง)
+                        // ==========================================
+                        let timelineHtml = '';
+                        if (order.status === 'cancelled') {
+                            timelineHtml = `
+                                <div class="alert alert-danger d-flex align-items-center mb-0 py-2 px-3 shadow-sm">
+                                    <i class="fas fa-times-circle fs-4 me-3 text-danger"></i>
+                                    <div>
+                                        <div class="fw-bold fs-6">คำสั่งซื้อนี้ถูกยกเลิกแล้ว</div>
+                                        ${order.cancel_reason ? `<div class="small mt-1 text-dark"><strong>เหตุผลที่ยกเลิก:</strong> ${escapeHtml(order.cancel_reason)}</div>` : '<div class="small text-muted mt-1">ลูกค้ายกเลิกคำสั่งซื้อ หรือแอดมินกดยกเลิกคำสั่งซื้อ</div>'}
+                                    </div>
+                                </div>
+                            `;
+                        } else if (isWholesale) {
+                            // คำสั่งซื้อส่ง: 5 ขั้นตอน
+                            // รับหน้าร้าน: ตรวจสอบชำระเงินมัดจำ, กำลังจัดเตรียม, ตรวจสอบชำระเงินอีก 50%, รอรับที่หน้าร้าน, รับสินค้าสำเร็จ
+                            let currentStep = 1;
+                            if (['pending_payment', 'processing'].includes(order.status)) currentStep = 1;
+                            else if (order.status === 'preparing') currentStep = 2;
+                            else if (['awaiting_final_payment', 'verifying_final_payment'].includes(order.status)) currentStep = 3;
+                            else if (['shipped', 'ready_for_pickup'].includes(order.status)) currentStep = 4;
+                            else if (order.status === 'completed') currentStep = 5;
+
+                            const step4Label = isPickup ? 'รอรับที่หน้าร้าน' : 'จัดส่งแล้ว';
+                            const step4Icon = isPickup ? 'fa-store' : 'fa-truck';
+                            const step5Label = isPickup ? 'รับสินค้าสำเร็จ' : 'จัดส่งสำเร็จ';
+
+                            timelineHtml = `
+                                <div class="timeline-step ${currentStep >= 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}" style="width:20%;">
+                                    <div class="timeline-icon"><i class="fas fa-receipt"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 1 ? 'text-primary-custom' : 'text-muted'}">ตรวจสอบชำระเงินมัดจำ</small>
+                                </div>
+                                <div class="timeline-step ${currentStep >= 2 ? 'completed' : ''} ${currentStep === 2 ? 'active' : ''}" style="width:20%;">
+                                    <div class="timeline-icon"><i class="fas fa-boxes"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 2 ? 'text-primary-custom' : 'text-muted'}">กำลังจัดเตรียม</small>
+                                </div>
+                                <div class="timeline-step ${currentStep >= 3 ? 'completed' : ''} ${currentStep === 3 ? 'active' : ''}" style="width:20%;">
+                                    <div class="timeline-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 3 ? 'text-primary-custom' : 'text-muted'}">ตรวจสอบชำระเงินอีก 50%</small>
+                                </div>
+                                <div class="timeline-step ${currentStep >= 4 ? 'completed' : ''} ${currentStep === 4 ? 'active' : ''}" style="width:20%;">
+                                    <div class="timeline-icon"><i class="fas ${step4Icon}"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 4 ? 'text-primary-custom' : 'text-muted'}">${step4Label}</small>
+                                </div>
+                                <div class="timeline-step ${currentStep >= 5 ? 'completed' : ''} ${currentStep === 5 ? 'active' : ''}" style="width:20%;">
+                                    <div class="timeline-icon"><i class="fas fa-check-circle"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 5 ? 'text-primary-custom' : 'text-muted'}">${step5Label}</small>
+                                </div>
+                            `;
+                        } else {
+                            // คำสั่งซื้อปลีก: 4 ขั้นตอน
+                            // รับหน้าร้าน: ตรวจสอบชำระเงิน, กำลังจัดเตรียม, รอรับที่หน้าร้าน, รับสินค้าสำเร็จ
+                            let currentStep = 1;
+                            if (['pending_payment', 'processing'].includes(order.status)) currentStep = 1;
+                            else if (order.status === 'preparing') currentStep = 2;
+                            else if (['shipped', 'ready_for_pickup'].includes(order.status)) currentStep = 3;
+                            else if (order.status === 'completed') currentStep = 4;
+
+                            const step3Label = isPickup ? 'รอรับที่หน้าร้าน' : 'จัดส่งแล้ว';
+                            const step3Icon = isPickup ? 'fa-store' : 'fa-truck';
+                            const step4Label = isPickup ? 'รับสินค้าสำเร็จ' : 'จัดส่งสำเร็จ';
+
+                            timelineHtml = `
+                                <div class="timeline-step ${currentStep >= 1 ? 'completed' : ''} ${currentStep === 1 ? 'active' : ''}">
+                                    <div class="timeline-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 1 ? 'text-primary-custom' : 'text-muted'}">ตรวจสอบชำระเงิน</small>
+                                </div>
+                                <div class="timeline-step ${currentStep >= 2 ? 'completed' : ''} ${currentStep === 2 ? 'active' : ''}">
+                                    <div class="timeline-icon"><i class="fas fa-box-open"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 2 ? 'text-primary-custom' : 'text-muted'}">กำลังจัดเตรียม</small>
+                                </div>
+                                <div class="timeline-step ${currentStep >= 3 ? 'completed' : ''} ${currentStep === 3 ? 'active' : ''}">
+                                    <div class="timeline-icon"><i class="fas ${step3Icon}"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 3 ? 'text-primary-custom' : 'text-muted'}">${step3Label}</small>
+                                </div>
+                                <div class="timeline-step ${currentStep >= 4 ? 'completed' : ''} ${currentStep === 4 ? 'active' : ''}">
+                                    <div class="timeline-icon"><i class="fas fa-check-circle"></i></div>
+                                    <small class="d-block fw-bold ${currentStep === 4 ? 'text-primary-custom' : 'text-muted'}">${step4Label}</small>
+                                </div>
+                            `;
+                        }
+                        const timelineContainer = document.getElementById('modalTimelineContainer');
+                        if (timelineContainer) {
+                            if (order.status === 'cancelled') {
+                                timelineContainer.className = 'mb-4';
+                            } else {
+                                timelineContainer.className = 'status-timeline';
+                            }
+                            timelineContainer.innerHTML = timelineHtml;
+                        }
+
+                        // ==========================================
+                        // ==========================================
+                        // Wholesale Delivery / Pickup Date Banner (วันรับสินค้า และ ต้องจัดส่งสินค้าให้ลูกค้า)
+                        // ==========================================
+                        const deliveryDateObj = formatWholesaleDeliveryDate(order.delivery_date, order.created_at);
+                        const deliveryDateContainer = document.getElementById('modalDeliveryDateContainer');
+                        if (deliveryDateContainer) {
+                            if (isWholesale && deliveryDateObj && deliveryDateObj.full) {
+                                const actionTypeTitle = isPickup ? 'วันรับสินค้า' : 'ต้องจัดส่งสินค้าให้ลูกค้า';
+                                const badgeShip = isPickup
+                                    ? '<span class="badge bg-warning text-dark px-2 py-1 fw-bold"><i class="fas fa-store me-1"></i>รับสินค้าที่หน้าร้าน</span>'
+                                    : '<span class="badge bg-primary px-2 py-1 fw-bold"><i class="fas fa-truck-moving me-1"></i>จัดส่งควบคุมอุณหภูมิ</span>';
+
+                                deliveryDateContainer.innerHTML = `
+                                    <div class="card border-0 mb-4 shadow-sm" style="background: linear-gradient(135deg, #fffbf0 0%, #fff3cd 100%); border-left: 6px solid #d97706 !important; border-radius: 12px; overflow: hidden;">
+                                        <div class="card-body p-3 p-md-4">
+                                            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0 me-3" 
+                                                        style="width: 56px; height: 56px; background-color: #610C10; color: #D4AF37; font-size: 1.6rem; border: 2px solid #D4AF37;">
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                            <span class="badge bg-danger text-white px-2 py-1 fw-bold">
+                                                                <i class="fas fa-boxes me-1"></i>คำสั่งซื้อส่ง (เหมา)
+                                                            </span>
+                                                            ${badgeShip}
+                                                        </div>
+                                                        <h5 class="mb-0 fw-bold" style="color: #610C10;">
+                                                            ${actionTypeTitle}
+                                                        </h5>
+                                                        <div class="fs-4 fw-bolder text-danger mt-1">
+                                                            <i class="fas fa-calendar-check me-1 text-warning"></i>${deliveryDateObj.full}
+                                                            <span class="fs-6 text-muted fw-normal ms-2">(${deliveryDateObj.short})</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            } else if (isWholesale) {
+                                deliveryDateContainer.innerHTML = `
+                                    <div class="alert alert-secondary d-flex align-items-center mb-4 py-2 px-3 shadow-sm rounded-3">
+                                        <i class="fas fa-info-circle me-2 text-primary fs-5"></i>
+                                        <div><strong>คำสั่งซื้อส่ง:</strong> ไม่ได้ระบุวันที่นัดรับ/จัดส่งล่วงหน้า</div>
+                                    </div>
+                                `;
+                            } else {
+                                deliveryDateContainer.innerHTML = '';
+                            }
+                        }
+
+                        // Customer Info
+                        const name = [order.first_name, order.last_name].filter(Boolean).join(' ') || order.username;
+                        const phone = order.phone || '-';
+                        let trackingHtml = '';
+                        if (order.tracking_number) {
+                            trackingHtml = `<p class="mt-2 mb-0 text-primary small"><i class="fas fa-truck"></i> เลขพัสดุ: <strong>${order.tracking_number}</strong></p>`;
+                        }
+
+                        // Clean up corrupted duplicated address strings from older orders
+                        let displayAddress = order.shipping_address || '-';
+                        if (displayAddress !== '-') {
+                            const match = displayAddress.match(/(ต\..+? อ\..+? จ\..+? \d{5})/);
+                            if (match) {
+                                const parts = displayAddress.split(match[1]);
+                                displayAddress = parts[0].trim() + ' ' + match[1];
+                            }
+                            displayAddress = displayAddress.replace(/\| ที่อยู่: รับที่หน้าร้าน \| ผู้รับ:.*?โทร\. [\d\-\s]+/, '| ที่อยู่:');
+                        }
+
+                        document.querySelector('#orderDetailModal .col-md-6.border-end').innerHTML = `
+                            <h6 class="fw-bold">ข้อมูลลูกค้าและที่อยู่จัดส่ง</h6>
+                            <p class="mb-1"><strong>${name}</strong> (${phone})</p>
+                            <p class="text-muted small">${displayAddress}</p>
+                            <p class="mt-2 mb-0">
+                                <span class="badge ${order.order_type === 'wholesale' ? 'bg-primary' : 'bg-secondary'}">${order.order_type === 'wholesale' ? 'ลูกค้าส่ง (เหมา)' : 'ลูกค้าปลีก'}</span>
+                                ${isPickup ? '<span class="badge bg-warning text-dark ms-1"><i class="fas fa-store me-1"></i>รับที่หน้าร้าน</span>' : '<span class="badge bg-info text-dark ms-1"><i class="fas fa-truck me-1"></i>จัดส่งปกติ</span>'}
+                            </p>
+                            ${trackingHtml}
+                        `;
+
+                        // Payment Info
+                        let paymentHtml = '<p class="text-muted small">ยังไม่มีข้อมูลการชำระเงิน</p>';
+                        if (isPayAtStore) {
+                            paymentHtml = `
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3 fs-1 text-success">
+                                        <i class="fas fa-hand-holding-usd"></i>
+                                    </div>
+                                    <div>
+                                        <p class="mb-1 fw-bold text-success">ชำระเงินเมื่อรับสินค้าหน้าร้าน</p>
+                                        <p class="mb-1 small text-muted">ลูกค้าจะชำระเงินสดหรือสแกนจ่ายที่หน้าร้าน</p>
+                                        <p class="mb-0 fw-bold text-primary-custom">ยอดที่ต้องชำระ: ฿${parseFloat(order.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (payment && payment.slip_image_url) {
+                            const remainAmt = parseFloat(payment.remaining_amount) > 0
+                                ? parseFloat(payment.remaining_amount)
+                                : Math.max(0, parseFloat(order.total_amount) - parseFloat(payment.amount_paid || 0));
+                            paymentHtml = `
+                                <div class="d-flex align-items-center mb-3">
+                                    <a href="${payment.slip_image_url}" target="_blank" class="me-3">
+                                        <img src="${payment.slip_image_url}" alt="Slip" style="height: 100px; border: 1px solid #ccc; padding: 2px;">
+                                    </a>
+                                    <div>
+                                        <p class="mb-1 small">รูปแบบ: ${payment.payment_type === 'deposit' ? 'มัดจำ 50%' : 'เต็มจำนวน 100%'}</p>
+                                        <p class="mb-0 fw-bold text-primary-custom">ยอดโอนแล้ว: ฿${parseFloat(payment.amount_paid).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                        ${payment.payment_type === 'deposit' ? `<p class="mb-0 small text-danger fw-semibold">ยอดคงเหลือ (50%): ฿${remainAmt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>` : ''}
+                                    </div>
+                                </div>
+                            `;
+
+                            // Check if there is a second slip
+                            if (payment.second_slip_image_url) {
+                                paymentHtml += `
+                                    <hr>
+                                    <h6 class="fw-bold text-success"><i class="fas fa-receipt me-1"></i> สลิปใบที่ 2 (ชำระเงินส่วนที่เหลือ)</h6>
+                                    <div class="d-flex align-items-center">
+                                        <a href="${payment.second_slip_image_url}" target="_blank" class="me-3">
+                                            <img src="${payment.second_slip_image_url}" alt="Slip 2" style="height: 100px; border: 1px solid #ccc; padding: 2px;">
+                                        </a>
+                                        <div>
+                                            <p class="mb-1 small">ยอดคงเหลือที่โอน: ฿${remainAmt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                            <p class="mb-0 fw-bold ${payment.remaining_status === 'completed' || order.status === 'preparing' || order.status === 'shipped' || order.status === 'completed' ? 'text-success' : 'text-warning'}">
+                                                สถานะ: ${payment.remaining_status === 'completed' || ['preparing', 'shipped', 'completed'].includes(order.status) ? 'ชำระครบถ้วนแล้ว' : 'รอแอดมินตรวจสอบ'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }
+                        document.querySelector('#orderDetailModal .col-md-6.ps-4').innerHTML = `
+                            <h6 class="fw-bold">ข้อมูลการชำระเงิน</h6>
+                            ${paymentHtml}
+                        `;
+
+                        // Order Items & Stock Info
+                        const tbody = document.querySelector('#orderDetailModal tbody');
+                        tbody.innerHTML = '';
+                        let subtotal = 0;
+                        let hasInsufficientStock = false;
+
+                        const headerTitleEl = document.getElementById('orderItemsHeaderTitle');
+                        if (headerTitleEl) {
+                            headerTitleEl.textContent = order.order_type === 'wholesale' ? 'รายการสินค้าและสต็อกหน้าร้าน' : 'รายการสินค้า';
+                        }
+
+                        items.forEach(item => {
+                            const actual_kg = parseFloat(item.actual_quantity_kg) || parseFloat(item.quantity_kg);
+                            const itemTotal = actual_kg * parseFloat(item.price_per_kg);
+
+                            // แสดงข้อความบอกสต็อกชิ้นส่วนนั้นๆ เฉพาะคำสั่งซื้อขายส่ง (wholesale) เท่านั้น ส่วนคำสั่งซื้อปลีกไม่ต้องขึ้นบอกจำนวนสต็อก
+                            const raw_stock = parseFloat(item.stock_kg) || 0;
+                            const current_stock = Math.max(0, raw_stock);
+                            let stockWarning = '';
+
+                            if (order.order_type === 'wholesale') {
+                                if (isWholesaleUnconfirmed) {
+                                    if (raw_stock < actual_kg) {
+                                        hasInsufficientStock = true;
+                                        const missing = (actual_kg - current_stock).toFixed(2);
+                                        stockWarning = `
+                                            <div class="mt-1">
+                                                <span class="badge bg-danger text-white px-2 py-1" style="font-size: 0.8rem;">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>สต็อกชิ้นส่วนนี้มี: ${current_stock.toFixed(2)} กก. (ไม่เพียงพอ ขาดอีก ${missing} กก. - กรุณาชำแหละวัวเพิ่ม)
+                                                </span>
+                                            </div>
+                                        `;
+                                    } else {
+                                        stockWarning = `
+                                            <div class="mt-1">
+                                                <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.8rem;">
+                                                    <i class="fas fa-check-circle me-1"></i>สต็อกชิ้นส่วนนี้มี: ${current_stock.toFixed(2)} กก. (สต็อกเพียงพอ)
+                                                </span>
+                                            </div>
+                                        `;
+                                    }
+                                } else {
+                                    const deductLabel = order.status === 'cancelled'
+                                        ? '<span class="text-secondary ms-1">(คืนสต็อกแล้ว)</span>'
+                                        : '<span class="text-success ms-1">(ตัดสต็อกหน้าร้านแล้ว)</span>';
+                                    stockWarning = `
+                                        <div class="mt-1">
+                                            <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.8rem;">
+                                                <i class="fas fa-boxes me-1 text-primary-custom"></i>สต็อกชิ้นส่วนนี้มี: <strong>${current_stock.toFixed(2)} กก.</strong> ${deductLabel}
+                                            </span>
+                                        </div>
+                                    `;
+                                }
+                            }
+
+                            subtotal += itemTotal;
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">${item.product_name}</div>
+                                        ${stockWarning}
+                                    </td>
+                                    <td class="text-center align-middle">฿${parseFloat(item.price_per_kg).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                    <td class="text-center align-middle">${actual_kg} กก.</td>
+                                    <td class="text-end align-middle">฿${itemTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                </tr>
+                            `;
+                        });
+
+                        // แสดงกล่องสรุปสถานะสต็อกหน้าร้านสำหรับแอดมิน
+                        const summaryAlertEl = document.getElementById('orderStockSummaryAlert');
+                        if (summaryAlertEl) {
+                            if (order.status === 'cancelled') {
+                                summaryAlertEl.innerHTML = '';
+                            } else if (isWholesaleUnconfirmed) {
+                                if (hasInsufficientStock) {
+                                    summaryAlertEl.innerHTML = `
+                                        <div class="alert alert-danger d-flex flex-column flex-md-row align-items-md-center justify-content-between py-2 px-3 mb-3 shadow-sm">
+                                            <div>
+                                                <i class="fas fa-exclamation-triangle me-2"></i><strong>สต็อกหน้าร้านไม่เพียงพอ!</strong> กรุณาชำแหละวัวเพิ่มให้มีสต็อกเพียงพอก่อนกดยืนยันคำสั่งซื้อ
+                                            </div>
+                                            <a href="admin-inventory.html" class="btn btn-sm btn-danger fw-bold mt-2 mt-md-0 ms-md-3 text-nowrap">
+                                                <i class="fas fa-cut me-1"></i>ไปหน้าชำแหละวัวเพิ่ม
+                                            </a>
+                                        </div>
+                                    `;
+                                } else {
+                                    summaryAlertEl.innerHTML = `
+                                        <div class="alert alert-success d-flex align-items-center py-2 px-3 mb-3 shadow-sm">
+                                            <i class="fas fa-check-circle fs-5 me-2"></i>
+                                            <div>
+                                                <strong>สต็อกหน้าร้านเพียงพอทุกรายการ!</strong> เมื่อแอดมินกด <strong>"จัดเตรียมสินค้าเสร็จแล้ว"</strong> ระบบจะตัดสต็อกหน้าร้านทันที และแจ้งให้ลูกค้าชำระเงินส่วนที่เหลือ (50%)
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                            } else if (order.order_type === 'wholesale' && order.status === 'awaiting_final_payment') {
+                                summaryAlertEl.innerHTML = `
+                                    <div class="alert alert-warning d-flex align-items-center py-2 px-3 mb-3 shadow-sm">
+                                        <i class="fas fa-check-double fs-5 me-2 text-success"></i>
+                                        <div>
+                                            <strong>แอดมินจัดเตรียมสินค้าและตัดสต็อกหน้าร้านแล้ว</strong> — ระบบได้แจ้งให้ลูกค้าชำระเงินส่วนที่เหลือ (50%) เพื่อที่แอดมินจะได้จัดส่งสินค้า
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                summaryAlertEl.innerHTML = '';
+                            }
+                        }
+
+                        // Totals
+                        const total = parseFloat(order.total_amount);
+                        const shipping = total - subtotal;
+
+                        document.querySelector('#orderDetailModal tfoot').innerHTML = `
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">ยอดรวมสินค้า:</td>
+                                <td class="text-end">฿${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">ค่าจัดส่ง/ส่วนลด:</td>
+                                <td class="text-end">฿${shipping.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr class="table-light text-primary-custom">
+                                <td colspan="3" class="text-end fw-bold fs-6">ยอดรวมทั้งสิ้น:</td>
+                                <td class="text-end fw-bold fs-6">฿${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                        `;
+
+                        // Modal Actions
+                        let actionHtml = `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>`;
+
+                        if (isWholesale) {
+                            // คำสั่งซื้อส่ง (Wholesale - ชำระมัดจำ 50%)
+                            if (['pending_payment', 'processing', 'pending', '', null].includes(order.status)) {
+                                actionHtml += `<button type="button" class="btn btn-success fw-bold shadow-sm" onclick="approveWholesaleDeposit(${order.id}); bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();"><i class="fas fa-check-circle me-1"></i> อนุมัติยอดมัดจำ 50% (กำลังจัดเตรียม)</button>`;
+                            } else if (order.status === 'preparing') {
+                                actionHtml += `<button type="button" class="btn btn-warning fw-bold text-dark shadow-sm" onclick="confirmFinishWholesalePreparation(${order.id}); bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();"><i class="fas fa-boxes me-1"></i> จัดเตรียมสินค้าเสร็จแล้ว (ตัดสต็อกและแจ้งชำระเงินอีก 50%)</button>`;
+                            } else if (order.status === 'awaiting_final_payment') {
+                                actionHtml += `<span class="badge bg-warning text-dark p-2 me-2 fs-6"><i class="fas fa-clock me-1"></i> รอลูกค้าชำระเงินอีก 50%</span>`;
+                            } else if (order.status === 'verifying_final_payment') {
+                                if (isPickup) {
+                                    actionHtml += `<button type="button" class="btn btn-primary fw-bold shadow-sm" onclick="markReadyForPickup(${order.id}); bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();"><i class="fas fa-store me-1"></i> อนุมัติสลิป 2 และสินค้าพร้อมรับหน้าร้าน</button>`;
+                                } else {
+                                    actionHtml += `<button type="button" class="btn btn-primary fw-bold shadow-sm" onclick="openTrackingModal(${order.id});"><i class="fas fa-shipping-fast me-1"></i> ตรวจสอบสลิป 2 และจัดส่งสินค้า (กรอกเลขพัสดุ)</button>`;
+                                }
+                            } else if (['shipped', 'ready_for_pickup'].includes(order.status)) {
+                                actionHtml += `<button type="button" class="btn btn-success fw-bold shadow-sm" onclick="updateOrderStatus(${order.id}, 'completed'); bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();"><i class="fas fa-check-double me-1"></i> ${isPickup ? 'รับสินค้าสำเร็จ' : 'จัดส่งสำเร็จ'} (เสร็จสิ้น)</button>`;
+                            }
+                        } else {
+                            // คำสั่งซื้อปลีก (Retail - ตัดสต็อกหน้าร้านทันที)
+                            if (['pending_payment', 'processing', 'pending', '', null].includes(order.status)) {
+                                actionHtml += `<button type="button" class="btn btn-success fw-bold shadow-sm" onclick="updateOrderStatus(${order.id}, 'preparing'); bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();"><i class="fas fa-check-circle me-1"></i> ยืนยันการชำระเงิน (กำลังจัดเตรียม)</button>`;
+                            } else if (order.status === 'preparing') {
+                                if (isPickup) {
+                                    actionHtml += `<button type="button" class="btn btn-primary fw-bold shadow-sm" onclick="markReadyForPickup(${order.id}); bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();"><i class="fas fa-store me-1"></i> สินค้าพร้อมรับที่หน้าร้าน</button>`;
+                                } else {
+                                    actionHtml += `<button type="button" class="btn btn-primary fw-bold shadow-sm" onclick="openTrackingModal(${order.id});"><i class="fas fa-shipping-fast me-1"></i> จัดส่งแล้ว (กรอกเลขพัสดุ)</button>`;
+                                }
+                            } else if (['shipped', 'ready_for_pickup'].includes(order.status)) {
+                                actionHtml += `<button type="button" class="btn btn-success fw-bold shadow-sm" onclick="updateOrderStatus(${order.id}, 'completed'); bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();"><i class="fas fa-check-double me-1"></i> ${isPickup ? 'รับสินค้าสำเร็จ' : 'จัดส่งสำเร็จ'} (เสร็จสิ้น)</button>`;
+                            }
+                        }
+
+                        if (order.status !== 'cancelled' && order.status !== 'completed') {
+                            actionHtml = `<button type="button" class="btn btn-outline-danger me-auto" onclick="openCancelModal(${order.id});"><i class="fas fa-times-circle me-1"></i> ยกเลิกคำสั่งซื้อ</button>` + actionHtml;
+                        }
+
+                        document.querySelector('#orderDetailModal .modal-footer').innerHTML = actionHtml;
+
+                        // Show modal
+                        var modalEl = document.getElementById('orderDetailModal');
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error in viewOrder:', err);
+                    alert('เกิดข้อผิดพลาดในการเปิดดูรายละเอียดคำสั่งซื้อ: ' + err.message);
+                });
+        }
+
+        function approveWholesaleDeposit(orderId) {
+            if (!confirm(`ยืนยันการอนุมัติยอดมัดจำ 50% สำหรับคำสั่งซื้อ #ORD-${String(orderId).padStart(4, '0')} และเริ่มเข้าสู่ขั้นตอน "จัดเตรียมสินค้า" หรือไม่?`)) return;
+            updateOrderStatus(orderId, 'preparing');
+        }
+
+        function markReadyForPickup(orderId) {
+            if (!confirm(`ยืนยันว่าสินค้าคำสั่งซื้อ #ORD-${String(orderId).padStart(4, '0')} พร้อมให้ลูกค้ามารับที่หน้าร้านแล้วใช่หรือไม่?\n(ระบบจะส่งข้อความแจ้งเตือนให้ลูกค้ามารับสินค้าที่หน้าร้านทันที)`)) return;
+            updateOrderStatus(orderId, 'ready_for_pickup');
+        }
+
+        function confirmFinishWholesalePreparation(orderId) {
+            confirmWholesaleOrder(orderId);
+        }
+
+        function openTrackingModal(orderId) {
+            const detailModalEl = document.getElementById('orderDetailModal');
+            if (detailModalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(detailModalEl);
+                if (modalInstance) modalInstance.hide();
+            }
+
+            const order = allOrdersData.find(o => o.id == orderId) || {};
+            document.getElementById('tracking_order_id').value = orderId;
+            document.getElementById('input_tracking_number').value = order.tracking_number || '';
+
+            const orderNum = `#ORD-${String(orderId).padStart(4, '0')}`;
+            const custName = [order.first_name, order.last_name].filter(Boolean).join(' ') || order.username || 'ลูกค้า';
+            const totalAmt = parseFloat(order.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+            const orderTypeBadge = order.order_type === 'wholesale'
+                ? '<span class="badge bg-purple text-white me-2">คำสั่งซื้อส่ง</span>'
+                : '<span class="badge bg-info text-dark me-2">คำสั่งซื้อปลีก</span>';
+
+            document.getElementById('trackingOrderSummary').innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center">
+                            ${orderTypeBadge}
+                            <strong class="text-dark fs-6">${orderNum}</strong>
+                        </div>
+                        <div class="text-muted small mt-1"><i class="fas fa-user me-1"></i>${custName}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">ยอดรวมทั้งสิ้น</div>
+                        <div class="text-primary-custom fw-bold fs-6">฿${totalAmt}</div>
+                    </div>
+                </div>
+            `;
+
+            const trackModal = new bootstrap.Modal(document.getElementById('trackingNumberModal'));
+            trackModal.show();
+            setTimeout(() => {
+                const input = document.getElementById('input_tracking_number');
+                if (input) input.focus();
+            }, 400);
+        }
+
+        function submitTrackingNumber(e) {
+            e.preventDefault();
+            const orderId = document.getElementById('tracking_order_id').value;
+            const trackingNum = document.getElementById('input_tracking_number').value.trim();
+
+            if (!trackingNum) {
+                alert('กรุณากรอกหมายเลขพัสดุ');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitTracking');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> กำลังบันทึก...';
+
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('status', 'shipped');
+            formData.append('tracking_number', trackingNum);
+
+            fetch('api/admin.php?action=update_order', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                    if (data.status === 'success') {
+                        const trackModalEl = document.getElementById('trackingNumberModal');
+                        const trackInst = bootstrap.Modal.getInstance(trackModalEl);
+                        if (trackInst) trackInst.hide();
+                        fetchOrders();
+                        alert(`บันทึกเลขพัสดุ ${trackingNum} และปรับสถานะเป็น "จัดส่งแล้ว" เรียบร้อยแล้ว!\nระบบได้ส่งการแจ้งเตือนไปยัง LINE และ Email ของลูกค้าทันที`);
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถบันทึกข้อมูลได้'));
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                    console.error(err);
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                });
+        }
+
+        function openCancelModal(orderId) {
+            const detailModalEl = document.getElementById('orderDetailModal');
+            if (detailModalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(detailModalEl);
+                if (modalInstance) modalInstance.hide();
+            }
+
+            const order = allOrdersData.find(o => o.id == orderId) || {};
+            document.getElementById('cancel_order_id').value = orderId;
+            document.getElementById('input_cancel_reason').value = '';
+
+            const orderNum = `#ORD-${String(orderId).padStart(4, '0')}`;
+            const custName = [order.first_name, order.last_name].filter(Boolean).join(' ') || order.username || 'ลูกค้า';
+            const totalAmt = parseFloat(order.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+            const orderTypeBadge = order.order_type === 'wholesale'
+                ? '<span class="badge bg-purple text-white me-2">คำสั่งซื้อส่ง</span>'
+                : '<span class="badge bg-info text-dark me-2">คำสั่งซื้อปลีก</span>';
+
+            document.getElementById('cancelOrderSummary').innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center">
+                            ${orderTypeBadge}
+                            <strong class="text-dark fs-6">${orderNum}</strong>
+                        </div>
+                        <div class="text-muted small mt-1"><i class="fas fa-user me-1"></i>${custName}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">ยอดรวมทั้งสิ้น</div>
+                        <div class="text-danger fw-bold fs-6">฿${totalAmt}</div>
+                    </div>
+                </div>
+            `;
+
+            const cancelModal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+            cancelModal.show();
+            setTimeout(() => {
+                const input = document.getElementById('input_cancel_reason');
+                if (input) input.focus();
+            }, 400);
+        }
+
+        function submitCancelOrder(e) {
+            e.preventDefault();
+            const orderId = document.getElementById('cancel_order_id').value;
+            const cancelReason = document.getElementById('input_cancel_reason').value.trim();
+
+            if (!cancelReason) {
+                alert('กรุณากรอกเหตุผลที่ยกเลิกคำสั่งซื้อ');
+                return;
+            }
+
+            if (!confirm(`ยืนยันการยกเลิกคำสั่งซื้อ #ORD-${String(orderId).padStart(4, '0')} และส่งข้อความแจ้งเตือนลูกค้าหรือไม่?`)) {
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitCancel');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> กำลังยกเลิกคำสั่งซื้อ...';
+
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('status', 'cancelled');
+            formData.append('cancel_reason', cancelReason);
+
+            fetch('api/admin.php?action=update_order', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-times-circle me-1"></i> ยืนยันยกเลิกคำสั่งซื้อ';
+
+                    if (data.status === 'success') {
+                        const cancelModalEl = document.getElementById('cancelOrderModal');
+                        const modalInstance = bootstrap.Modal.getInstance(cancelModalEl);
+                        if (modalInstance) modalInstance.hide();
+                        fetchOrders();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถยกเลิกคำสั่งซื้อได้'));
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-times-circle me-1"></i> ยืนยันยกเลิกคำสั่งซื้อ';
+                    console.error(err);
+                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                });
+        }
+
+        function updateOrderStatus(orderId, newStatus, trackingNumber = '', cancelReason = '') {
+            if (!confirm('ยืนยันการเปลี่ยนสถานะคำสั่งซื้อ?')) return;
+
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('status', newStatus);
+            if (trackingNumber) formData.append('tracking_number', trackingNumber);
+            if (cancelReason) formData.append('cancel_reason', cancelReason);
+
+            fetch('api/admin.php?action=update_order', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        fetchOrders(); // Refresh instantly
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function confirmWholesaleOrder(orderId) {
+            fetch('api/admin.php?action=get_order_details&id=' + orderId)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        alert('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถดึงข้อมูลคำสั่งซื้อได้'));
+                        return;
+                    }
+
+                    const items = data.items || [];
+                    const insufficientList = [];
+                    const stockLines = [];
+
+                    items.forEach(item => {
+                        const reqKg = parseFloat(item.quantity_kg) || 0;
+                        const availKg = Math.max(0, parseFloat(item.stock_kg) || 0);
+                        stockLines.push(`- ${item.product_name}: สั่ง ${reqKg.toFixed(2)} กก. (สต็อกหน้าร้านมี ${availKg.toFixed(2)} กก.)`);
+                        if (availKg < reqKg) {
+                            const missing = (reqKg - availKg).toFixed(2);
+                            insufficientList.push(`- ${item.product_name}: ลูกค้าสั่ง ${reqKg.toFixed(2)} กก. แต่มีสต็อกหน้าร้าน ${availKg.toFixed(2)} กก. (ขาดอีก ${missing} กก.)`);
+                        }
+                    });
+
+                    if (insufficientList.length > 0) {
+                        const goInventory = confirm(
+                            `ไม่สามารถยืนยันคำสั่งซื้อ #ORD-${String(orderId).padStart(4, '0')} ได้ เนื่องจากสต็อกหน้าร้านไม่เพียงพอ!\n\n` +
+                            insufficientList.join('\n') +
+                            `\n\nกรุณาชำแหละวัวเพิ่มก่อนกดยืนยันคำสั่งซื้อ\nกด "ตกลง" เพื่อไปที่หน้าคลังสินค้าและชำแหละโคเนื้อเพิ่มทันที`
+                        );
+                        if (goInventory) {
+                            window.location.href = 'admin-inventory.html';
+                        }
+                        return;
+                    }
+
+                    const confirmMsg =
+                        `ตรวจสอบสต็อกหน้าร้านสำหรับคำสั่งซื้อขายส่ง #ORD-${String(orderId).padStart(4, '0')}:\n` +
+                        stockLines.join('\n') +
+                        `\n\nสต็อกหน้าร้านเพียงพอทุกรายการ!\nยืนยันคำสั่งซื้อเพื่อตัดสต็อกหน้าร้านทันที และแจ้งให้ลูกค้าชำระเงินส่วนที่เหลือ (50%) เพื่อที่แอดมินจะได้จัดเตรียมสินค้าหรือไม่?`;
+
+                    if (!confirm(confirmMsg)) return;
+
+                    const formData = new FormData();
+                    formData.append('order_id', orderId);
+
+                    fetch('api/admin.php?action=confirm_wholesale_order', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(res => res.json())
+                        .then(resData => {
+                            if (resData.status === 'success') {
+                                const detailModalEl = document.getElementById('orderDetailModal');
+                                const modalInstance = bootstrap.Modal.getInstance(detailModalEl);
+                                if (modalInstance) modalInstance.hide();
+                                fetchOrders();
+
+                                const remainFormatted = parseFloat(resData.remaining_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+                                alert(
+                                    `ยืนยันคำสั่งซื้อ #ORD-${String(orderId).padStart(4, '0')} และตัดสต็อกหน้าร้านทันทีเรียบร้อยแล้ว!\n\n` +
+                                    `ระบบได้ส่งข้อความแจ้งให้ลูกค้าชำระเงินส่วนที่เหลือ (฿${remainFormatted}) เพื่อที่แอดมินจะได้จัดเตรียมสินค้า`
+                                );
+                            } else {
+                                alert('ไม่สามารถยืนยันคำสั่งซื้อได้:\n' + (resData.message || 'เกิดข้อผิดพลาด'));
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error:', err);
+                            alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                        });
+                })
+                .catch(err => console.error('Error:', err));
+        }
+
+        function openActualWeightModal(orderId) {
+            confirmWholesaleOrder(orderId);
+        }
+
+        function saveActualWeights() {
+            const orderId = document.getElementById('aw_order_id').value;
+            const inputs = document.querySelectorAll('.aw-input');
+            const items = [];
+
+            let isValid = true;
+            inputs.forEach(input => {
+                if (!input.value) isValid = false;
+                items.push({
+                    id: input.getAttribute('data-item-id'),
+                    actual_kg: parseFloat(input.value)
+                });
+            });
+
+            if (!isValid) {
+                alert('กรุณากรอกน้ำหนักให้ครบทุกรายการ');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('items', JSON.stringify(items));
+
+            fetch('api/admin.php?action=save_actual_weights', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        bootstrap.Modal.getInstance(document.getElementById('actualWeightModal')).hide();
+                        fetchOrders();
+
+                        if (data.remaining_amount > 0) {
+                            alert(`ยืนยันคำสั่งซื้อและตัดสต็อกหน้าร้านสำเร็จ!\nแจ้งให้ลูกค้าชำระเงินส่วนที่เหลือ: ฿${data.remaining_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} เพื่อที่แอดมินจะได้จัดเตรียมสินค้า`);
+                        } else {
+                            alert('ยืนยันคำสั่งซื้อและแจ้งยอดลูกค้าเรียบร้อยแล้ว');
+                        }
+                    } else {
+                        alert('Error: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+    </script>
+</body>
+
+</html>

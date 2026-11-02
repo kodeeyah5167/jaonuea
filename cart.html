@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตะกร้าสินค้าและการชำระเงิน - จ้าวเนื้อ๑</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css?v=26">
+    <!-- Multi-Address Manager CSS -->
+    <link rel="stylesheet" href="assets/css/address-manager.css?v=3">
+</head>
+
+<body class="bg-light">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="index.html">
+                <img src="assets/img/logo.jpg" alt="จ้าวเนื้อ๑ Logo" height="50" class="me-2 rounded-circle"
+                    onerror="this.src='https://via.placeholder.com/50/610C10/D4AF37?text=JN';">
+                จ้าวเนื้อ๑
+            </a>
+            <div class="navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-0 align-items-center flex-row gap-2" style="padding-left: 1rem;">
+                    <li class="nav-item"><a class="nav-link" href="index.html">หน้าแรก</a></li>
+                    <li class="nav-item"><a class="nav-link" href="shop.php">สั่งซื้อสินค้า</a></li>
+                    <li class="nav-item"><a class="nav-link active nav-cart-link" href="cart.html"><i
+                                class="fas fa-shopping-cart"></i> ตะกร้า <span class="badge nav-cart-badge d-none"
+                                id="cart-count" data-count="0" style="display: none !important;"></span></a>
+                    </li>
+                    <li class="nav-item ms-2"><a href="login.html" class="btn btn-primary-custom btn-sm shadow-sm"><i
+                                class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <script>
+        (function () {
+            try {
+                var c = JSON.parse(localStorage.getItem('jaonuea_cart') || '[]');
+                var q = 0;
+                if (Array.isArray(c)) c.forEach(function (i) { q += parseFloat(i.quantity) || 0; });
+                var b = document.querySelectorAll('#cart-count, .nav-cart-badge');
+                b.forEach(function (el) {
+                    if (q > 0) {
+                        el.innerText = (q % 1 === 0) ? q : q.toFixed(2);
+                        el.setAttribute('data-count', q);
+                        el.classList.remove('d-none');
+                        el.style.setProperty('display', 'inline-flex', 'important');
+                    } else {
+                        el.innerText = '';
+                        el.setAttribute('data-count', '0');
+                        el.classList.add('d-none');
+                        el.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            } catch (e) { }
+        })();
+    </script>
+
+    <div class="container py-5 mb-5">
+        <h2 class="text-primary-custom mb-4 font-heading fw-bold"><i
+                class="fas fa-shopping-cart me-2"></i>ตะกร้าสินค้าของคุณ</h2>
+
+        <div class="row">
+            <!-- Cart Items -->
+            <div class="col-lg-8 mb-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">สินค้า</th>
+                                        <th>ราคา</th>
+                                        <th style="width: 140px;" class="text-center">จำนวน</th>
+                                        <th style="width: 60px;" class="text-center"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cart-items">
+                                    <!-- Dynamic items will go here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Options -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 text-primary-custom"><i class="fas fa-truck me-2"></i>ช่องทางการจัดส่ง</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="deliveryOption" id="deliveryOption1"
+                                checked>
+                            <label class="form-check-label" for="deliveryOption1">
+                                จัดส่งปกติ (รถควบคุมอุณหภูมิ)
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="deliveryOption" id="deliveryOption3">
+                            <label class="form-check-label" for="deliveryOption3">
+                                รับสินค้าที่หน้าร้าน
+                            </label>
+                            <div id="pickupWarning" class="alert alert-warning mt-2 mb-0 py-2 small fw-bold"
+                                style="display:none;">
+                                <i class="fas fa-exclamation-triangle me-1"></i> <span
+                                    id="pickupWarningText">กรุณามารับสินค้าภายในเวลา 08:00 น. - 16:30 น.
+                                    ของวันที่สั่งซื้อ (หากเลยเวลา ระบบจะให้รับในวันพรุ่งนี้)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Address (Multi-Address Management - 111.jpg) -->
+                <div class="card border-0 shadow-sm mb-4" id="deliveryAddressSection">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="mb-0 text-primary-custom"><i
+                                class="fas fa-map-marker-alt me-2 text-danger"></i>ที่อยู่จัดส่งสินค้า</h5>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="checkout-address-card" id="checkoutTopAddressCard">
+                            <!-- Populated dynamically by AddressManager (Image 111.jpg) -->
+                        </div>
+
+                        <!-- Hidden fields to integrate with checkout process -->
+                        <input type="hidden" id="firstName">
+                        <input type="hidden" id="lastName">
+                        <input type="hidden" id="receiverPhone">
+                        <input type="hidden" id="shippingAddressDetail">
+                        <input type="hidden" id="shippingProvince">
+                        <input type="hidden" id="shippingDistrict">
+                        <input type="hidden" id="shippingSubdistrict">
+                        <input type="hidden" id="shippingZipcode">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary & Payment -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div
+                        class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 text-primary-custom">สรุปคำสั่งซื้อ</h5>
+                        <span id="cart-type-badge" class="badge bg-secondary-custom"
+                            style="display: none;">ออเดอร์ขายส่ง</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="wholesale-status-container"></div>
+                        <div id="shipping-status-container"></div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>ยอดรวมสินค้า (<span id="summary-total-kg">0</span> กก.)</span>
+                            <span id="summary-subtotal">฿0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>ค่าจัดส่ง <small class="text-muted"
+                                    id="shipping-desc">(รถควบคุมอุณหภูมิ)</small></span>
+                            <span id="summary-shipping">฿150.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" id="wholesale-discount-row"
+                            style="display: none;">
+                            <span>ส่วนลดขายส่ง <small class="text-muted">(10%)</small></span>
+                            <span id="summary-ws-discount" class="text-danger">-฿0.00</span>
+                        </div>
+                        <hr>
+                        <div id="wholesale-date-container" class="mb-3 p-3 bg-light rounded border border-warning shadow-sm" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="text-primary-custom small" id="ws-date-label">
+                                    <i class="far fa-calendar-alt me-1"></i> ต้องจัดส่งสินค้าให้ลูกค้า:
+                                </strong>
+                                <span class="badge bg-warning text-dark border border-warning">คำสั่งซื้อส่ง</span>
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white text-primary-custom"><i class="fas fa-calendar-day"></i></span>
+                                <input type="text" class="form-control fw-bold" id="cart-preorder-date" placeholder="dd/mm/yyyy" style="background-color: #fff;">
+                            </div>
+                            <div class="form-text text-muted small mt-1" style="font-size: 0.75rem;"><i class="fas fa-info-circle me-1 text-warning"></i>เลือกวันรับ/ส่งสินค้าล่วงหน้าอย่างน้อย 3 วัน (วัน/เดือน/ปี)</div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong class="fs-6">ยอดรวมทั้งสิ้น</strong>
+                            <strong class="fs-6 text-muted" id="summary-total-amount">฿0.00</strong>
+                        </div>
+                        <div
+                            class="d-flex justify-content-between mb-4 bg-primary-custom text-white p-3 rounded shadow-sm">
+                            <strong class="fs-5" id="payable-label">ยอดชำระสุทธิ</strong>
+                            <strong class="fs-5" id="summary-grand-total">฿0.00</strong>
+                        </div>
+
+                        <!-- Payment Section -->
+                        <h6 class="mb-3 text-secondary-custom fw-bold"><i
+                                class="fas fa-wallet me-2"></i>ช่องทางการชำระเงิน</h6>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="paymentOption" id="payTransfer" checked>
+                            <label class="form-check-label" for="payTransfer">สแกน QR Code / โอนเงิน</label>
+                        </div>
+
+                        <div id="transferDetails">
+                            <div class="auth-restricted-content" style="display: none;">
+                                <div class="p-3 bg-light rounded mb-3 text-center border">
+                                    <h6 class="mb-2 fw-bold text-primary-custom">สแกน QR Code เพื่อชำระเงิน</h6>
+                                    <img src="assets/img/qrcode.jpg" alt="QR Code รับเงิน"
+                                        class="img-fluid mb-3 rounded shadow-sm" style="max-width: 250px;">
+                                    <p class="mb-1 small fw-bold">ธนาคารกรุงไทย (Krungthai)</p>
+                                    <strong class="fs-5 text-primary-custom">016-0-68030-1</strong>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">แนบหลักฐานการโอนเงิน <span
+                                            class="text-danger">*</span></label>
+                                    <input class="form-control form-control-sm" type="file" id="slipUpload"
+                                        accept="image/*">
+                                    <div class="form-text small">รองรับไฟล์ JPG, PNG ขนาดไม่เกิน 5MB</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary-custom btn-lg w-100" id="btnConfirmOrder"
+                            onclick="confirmOrder()"><i class="fas fa-check-circle me-2"></i>ยืนยันคำสั่งซื้อ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery & Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Flatpickr for Date Formatting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- jsQR Library for Mock Slip Verification -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <!-- Hidden Canvas for QR reading -->
+    <canvas id="qrCanvas" style="display:none;"></canvas>
+
+    <!-- jquery.Thailand.js dependencies -->
+    <script type="text/javascript"
+        src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/JQL.min.js"></script>
+    <script type="text/javascript"
+        src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dependencies/typeahead.bundle.js"></script>
+    <link rel="stylesheet"
+        href="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dist/jquery.Thailand.min.css">
+    <script type="text/javascript"
+        src="https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/dist/jquery.Thailand.min.js"></script>
+    <!-- Custom JS -->
+    <script src="assets/js/main.js?v=29"></script>
+    <!-- Multi-Address Manager JS -->
+    <script src="assets/js/address-manager.js?v=5"></script>
+    <script>
+        const allProvinces = [
+            "กระบี่", "กรุงเทพมหานคร", "กาญจนบุรี", "กาฬสินธุ์", "กำแพงเพชร", "ขอนแก่น", "จันทบุรี", "ฉะเชิงเทรา", "ชลบุรี", "ชัยนาท",
+            "ชัยภูมิ", "ชุมพร", "เชียงราย", "เชียงใหม่", "ตรัง", "ตราด", "ตาก", "นครนายก", "นครปฐม", "นครพนม", "นครราชสีมา",
+            "นครศรีธรรมราช", "นครสวรรค์", "นนทบุรี", "นราธิวาส", "น่าน", "บึงกาฬ", "บุรีรัมย์", "ปทุมธานี", "ประจวบคีรีขันธ์", "ปราจีนบุรี",
+            "ปัตตานี", "พระนครศรีอยุธยา", "พะเยา", "พังงา", "พัทลุง", "พิจิตร", "พิษณุโลก", "เพชรบุรี", "เพชรบูรณ์", "แพร่", "ภูเก็ต",
+            "มหาสารคาม", "มุกดาหาร", "แม่ฮ่องสอน", "ยโสธร", "ยะลา", "ร้อยเอ็ด", "ระนอง", "ระยอง", "ราชบุรี", "ลพบุรี", "ลำปาง",
+            "ลำพูน", "เลย", "ศรีสะเกษ", "สกลนคร", "สงขลา", "สตูล", "สมุทรปราการ", "สมุทรสงคราม", "สมุทรสาคร", "สระแก้ว", "สระบุรี",
+            "สิงห์บุรี", "สุโขทัย", "สุพรรณบุรี", "สุราษฎร์ธานี", "สุรินทร์", "หนองคาย", "หนองบัวลำภู", "อ่างทอง", "อำนาจเจริญ", "อุดรธานี",
+            "อุตรดิตถ์", "อุทัยธานี", "อุบลราชธานี"
+        ];
+
+        const zone1Provinces = ['ตรัง'];
+        const zone2Provinces = [
+            'กรุงเทพมหานคร', 'นนทบุรี', 'ปทุมธานี', 'สมุทรปราการ', 'สมุทรสาคร', 'นครปฐม',
+            'พระนครศรีอยุธยา', 'อ่างทอง', 'ลพบุรี', 'สิงห์บุรี', 'ชัยนาท', 'สระบุรี', 'สมุทรสงคราม',
+            'สุพรรณบุรี', 'นครนายก', 'กระบี่', 'ชุมพร', 'นครศรีธรรมราช', 'นราธิวาส', 'ปัตตานี', 'พังงา', 'พัทลุง', 'ภูเก็ต', 'ยะลา', 'ระนอง', 'สงขลา', 'สตูล', 'สุราษฎร์ธานี'
+        ];
+
+        function calculateShipping(weight, province) {
+            if (weight <= 0) return 0;
+            let zone = 3;
+            if (zone1Provinces.includes(province)) zone = 1;
+            else if (zone2Provinces.includes(province)) zone = 2;
+
+            const rates = {
+                1: [90, 100, 110, 130, 150, 190],
+                2: [140, 170, 190, 210, 250, 290],
+                3: [270, 290, 310, 340, 360, 380]
+            };
+            const maxWeights = [5, 10, 15, 20, 25, 30];
+
+            let totalCost = 0;
+            let remainingWeight = weight;
+
+            while (remainingWeight > 0) {
+                let boxWeight = remainingWeight > 30 ? 30 : remainingWeight;
+                remainingWeight -= boxWeight;
+
+                let rateIndex = 0;
+                for (let i = 0; i < maxWeights.length; i++) {
+                    if (boxWeight <= maxWeights[i]) {
+                        rateIndex = i;
+                        break;
+                    }
+                }
+                totalCost += rates[zone][rateIndex];
+            }
+            return totalCost;
+        }
+
+        $(document).ready(function () {
+            let minPreorderDate = new Date();
+            minPreorderDate.setDate(minPreorderDate.getDate() + 3);
+
+            window.cartDateFp = flatpickr("#cart-preorder-date", {
+                dateFormat: "d/m/Y",
+                allowInput: true,
+                minDate: minPreorderDate,
+                placeholder: "dd/mm/yyyy",
+                onChange: function (selectedDates, dateStr, instance) {
+                    if (dateStr) {
+                        setDeliveryDate(dateStr);
+                    }
+                }
+            });
+
+            // Render cart immediately before any other initialization
+            renderCart();
+
+            // Multi-Address Management (Shopee Flow: 111.jpg, 222.jpg, 333.jpg)
+            AddressManager.init({
+                container: '#checkoutTopAddressCard',
+                onChange: function (addr) {
+                    if (addr) {
+                        let names = (addr.recipient_name || '').trim().split(/\s+/);
+                        $('#firstName').val(names[0] || '');
+                        $('#lastName').val(names.slice(1).join(' ') || '');
+                        $('#receiverPhone').val(addr.phone || '');
+                        $('#shippingAddressDetail').val(addr.address_detail || '');
+                        $('#shippingProvince').val(addr.province || '');
+                        $('#shippingDistrict').val(addr.district || '');
+                        $('#shippingSubdistrict').val(addr.subdistrict || '');
+                        $('#shippingZipcode').val(addr.zipcode || '');
+                    } else {
+                        // หากไม่มีที่อยู่ (เช่น ยังไม่ได้เข้าสู่ระบบ) ให้เคลียร์ฟิลด์ทั้งหมดเป็นค่าว่าง
+                        $('#firstName').val('');
+                        $('#lastName').val('');
+                        $('#receiverPhone').val('');
+                        $('#shippingAddressDetail').val('');
+                        $('#shippingProvince').val('');
+                        $('#shippingDistrict').val('');
+                        $('#shippingSubdistrict').val('');
+                        $('#shippingZipcode').val('');
+                    }
+                    renderCart();
+                }
+            });
+
+            $.Thailand({
+                database: 'https://earthchie.github.io/jquery.Thailand.js/jquery.Thailand.js/database/db.json',
+                $district: $('#shippingSubdistrict'),
+                $amphoe: $('#shippingDistrict'),
+                $province: $('#shippingProvince'),
+                $zipcode: $('#shippingZipcode'),
+                onDataFill: function (data) {
+                    renderCart();
+                }
+            });
+
+            // ตรวจสอบสถานะการเข้าสู่ระบบ (ใช้เฉพาะที่อยู่ที่ผู้ใช้กรอกไว้ในบัญชีผ่าน AddressManager เท่านั้น)
+            const legacyAddrFields = ['firstName', 'lastName', 'receiverPhone', 'shippingAddressDetail', 'shippingSubdistrict', 'shippingDistrict', 'shippingProvince', 'shippingZipcode'];
+            legacyAddrFields.forEach(f => {
+                localStorage.removeItem('jn_' + f);
+                localStorage.removeItem('cart_form_' + f);
+            });
+            fetch('api/auth.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'check_session' })
+            }).then(r => r.json()).then(res => {
+                if (!res.logged_in) {
+                    legacyAddrFields.forEach(f => {
+                        $('#' + f).val('');
+                    });
+                }
+                renderCart();
+            });
+
+            const savedDeliveryOption = localStorage.getItem('cart_form_deliveryOption');
+            if (savedDeliveryOption) {
+                $('#' + savedDeliveryOption).prop('checked', true);
+            }
+
+            const savedPaymentOption = localStorage.getItem('cart_form_paymentOption');
+            if (savedPaymentOption) {
+                $('#' + savedPaymentOption).prop('checked', true);
+            }
+
+            // Save form data on change
+            $('input[type="text"], input[type="tel"], textarea').on('input change', function () {
+                if (formFields.includes($(this).attr('id'))) {
+                    localStorage.setItem('cart_form_' + $(this).attr('id'), $(this).val());
+                }
+            });
+
+            $('input[name="deliveryOption"]').on('change', function () {
+                localStorage.setItem('cart_form_deliveryOption', $(this).attr('id'));
+            });
+
+            $('input[name="paymentOption"]').on('change', function () {
+                localStorage.setItem('cart_form_paymentOption', $(this).attr('id'));
+                updatePaymentUI();
+            });
+
+            // Event delegation for cart actions
+            $('#cart-items').on('click', '.btn-decrease', function () {
+                let id = String($(this).attr('data-id'));
+                let input = $(this).siblings('input');
+                let qty = parseFloat(input.val()) - 1;
+                updateQuantity(id, qty);
+                renderCart();
+            });
+
+            $('#cart-items').on('click', '.btn-increase', function () {
+                let id = String($(this).attr('data-id'));
+                let input = $(this).siblings('input');
+                let max = parseFloat(input.attr('max')) || 999;
+                let qty = parseFloat(input.val()) + 1;
+                if (qty > max) {
+                    alert('สต๊อกคงเหลือมีเพียง ' + max + ' กก.');
+                    qty = max;
+                }
+                updateQuantity(id, qty);
+                renderCart();
+            });
+
+            $('#cart-items').on('change', '.qty-input', function () {
+                let id = String($(this).attr('data-id'));
+                let max = parseFloat($(this).attr('max')) || 999;
+                let qty = parseFloat($(this).val());
+                if (isNaN(qty) || qty < 0) qty = 0;
+                if (qty > max) {
+                    alert('สต๊อกคงเหลือมีเพียง ' + max + ' กก.');
+                    qty = max;
+                }
+                updateQuantity(id, qty);
+                renderCart();
+            });
+
+            $('#cart-items').on('click', '.btn-remove', function () {
+                let id = String($(this).attr('data-id'));
+                if (confirm('คุณต้องการลบสินค้านี้ออกจากตะกร้าหรือไม่?')) {
+                    removeFromCart(id);
+                    renderCart();
+                }
+            });
+
+            // Re-calculate when delivery option changes
+            $('input[name="deliveryOption"]').on('change', function () {
+                renderCart();
+                updatePaymentOptions();
+
+                if ($('#deliveryOption1').is(':checked')) {
+                    $('#deliveryAddressSection').show();
+                } else {
+                    $('#deliveryAddressSection').hide();
+                }
+
+                if ($('#deliveryOption3').is(':checked')) {
+                    updatePickupWarning(true);
+                    $('#pickupWarning').show();
+                } else {
+                    $('#pickupWarning').hide();
+                }
+            });
+
+            // Initialize state
+            updatePaymentOptions();
+            if ($('#deliveryOption1').is(':checked')) {
+                $('#deliveryAddressSection').show();
+            } else {
+                $('#deliveryAddressSection').hide();
+            }
+            if ($('#deliveryOption3').is(':checked')) {
+                updatePickupWarning(false);
+                $('#pickupWarning').show();
+            }
+
+            function updatePickupWarning(showAlert) {
+                const now = new Date();
+                const hours = now.getHours();
+                const minutes = now.getMinutes();
+
+                if (hours > 16 || (hours === 16 && minutes >= 30)) {
+                    $('#pickupWarningText').text('เนื่องจากขณะนี้เลยเวลา 16:30 น. แล้ว คุณสามารถเข้ามารับสินค้าที่หน้าร้านได้ใน เวลา 08:00 น. - 16:30 น.');
+                    $('#pickupWarning').removeClass('alert-warning').addClass('alert-info');
+                    if (showAlert) alert('แจ้งเตือน: เนื่องจากขณะนี้เลยเวลา 16:30 น. แล้ว คุณสามารถเข้ามารับสินค้าที่หน้าร้านได้ใน เวลา 08:00 น. - 16:30 น.');
+                } else {
+                    $('#pickupWarningText').text('กรุณามารับสินค้าภายในเวลา 08:00 น. - 16:30 น. ของวันที่สั่งซื้อ (หากเลยเวลา ระบบจะให้รับในวันพรุ่งนี้)');
+                    $('#pickupWarning').removeClass('alert-info').addClass('alert-warning');
+                    if (showAlert) alert('แจ้งเตือน: กรุณามารับสินค้าภายในเวลา 08:00 น. - 16:30 น. ของวันนี้ (หากเกินเวลา ระบบจะให้รับในวันพรุ่งนี้)');
+                }
+            }
+        });
+
+        async function confirmOrder() {
+            let cart = getCart();
+            let cartType = getCartType();
+            let deliveryDate = $('#cart-preorder-date').val() || getDeliveryDate();
+            let isPickup = $('input[name="deliveryOption"]:checked').attr('id') === 'deliveryOption3';
+
+            if (cart.length === 0) {
+                alert('ตะกร้าสินค้าว่างเปล่า กรุณาเลือกสินค้าก่อนยืนยันคำสั่งซื้อ');
+                return;
+            }
+
+            if (cartType === 'wholesale') {
+                if (!deliveryDate) {
+                    let actionText = isPickup ? 'วันรับสินค้า' : 'ต้องจัดส่งสินค้าให้ลูกค้า';
+                    alert('กรุณาเลือก' + actionText + ' (สั่งล่วงหน้าอย่างน้อย 3 วัน)');
+                    $('#cart-preorder-date').focus();
+                    return;
+                }
+                setDeliveryDate(deliveryDate);
+            }
+
+            try {
+                const authResponse = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'check_session' })
+                });
+                const authResult = await authResponse.json();
+
+                if (!authResult.logged_in) {
+                    alert('กรุณาเข้าสู่ระบบก่อนยืนยันคำสั่งซื้อ');
+                    window.location.href = 'login.html?redirect=cart.html';
+                    return;
+                }
+
+                // Get payment method
+                let paymentMethod = 'transfer';
+
+                let isPickup = $('input[name="deliveryOption"]:checked').attr('id') === 'deliveryOption3';
+
+                // ดึงข้อมูลผู้รับและที่อยู่จาก AddressManager หรือข้อมูลบัญชีผู้ใช้ (โดยไม่บังคับแจ้งเตือนกรอกชื่อ-นามสกุล-เบอร์โทรแยก)
+                const selectedAddr = (typeof AddressManager !== 'undefined' && AddressManager.getSelectedAddress) ? AddressManager.getSelectedAddress() : null;
+                let firstName = $('#firstName').val().trim();
+                let lastName = $('#lastName').val().trim();
+                let receiverPhone = $('#receiverPhone').val().trim();
+
+                if (selectedAddr) {
+                    if (!firstName) {
+                        let names = (selectedAddr.recipient_name || '').trim().split(/\s+/);
+                        firstName = names[0] || '';
+                        lastName = names.slice(1).join(' ') || '';
+                    }
+                    if (!receiverPhone) {
+                        receiverPhone = selectedAddr.phone || '';
+                    }
+                }
+                if (!firstName) {
+                    let fallbackName = (authResult.fullname || authResult.first_name || authResult.username || 'ลูกค้า').trim().split(/\s+/);
+                    firstName = fallbackName[0] || 'ลูกค้า';
+                    lastName = fallbackName.slice(1).join(' ') || (authResult.last_name || '');
+                }
+                if (!receiverPhone) {
+                    receiverPhone = authResult.phone || '-';
+                }
+                let receiverName = (firstName + (lastName ? ' ' + lastName : '')).trim();
+
+                // Build checkout payload
+                let selectedProvince = ($('#shippingProvince').val() || (selectedAddr ? selectedAddr.province : '') || '').trim();
+                let addrDetail = ($('#shippingAddressDetail').val() || (selectedAddr ? selectedAddr.address_detail : '') || '').trim();
+                let subdistrict = ($('#shippingSubdistrict').val() || (selectedAddr ? selectedAddr.subdistrict : '') || '').trim();
+                let district = ($('#shippingDistrict').val() || (selectedAddr ? selectedAddr.district : '') || '').trim();
+                let zipcode = ($('#shippingZipcode').val() || (selectedAddr ? selectedAddr.zipcode : '') || '').trim();
+
+                // Auto-clean the address detail box if it has duplicated info or pasted prefixes
+                if (addrDetail.includes('| ที่อยู่:')) {
+                    addrDetail = addrDetail.split('| ที่อยู่:').pop();
+                } else if (addrDetail.includes('รับที่หน้าร้าน | ผู้รับ:')) {
+                    addrDetail = addrDetail.replace(/รับที่หน้าร้าน \| ผู้รับ:.*?โทร\. [\d\-\s]+/g, '');
+                }
+
+                // Remove duplicate subdistrict onwards
+                addrDetail = addrDetail.replace(/ ต\..*/, '').replace(/ แขวง.*/, '').trim();
+
+                // Update the visual field and localstorage so it's fixed for the future
+                $('#shippingAddressDetail').val(addrDetail);
+                localStorage.setItem('jn_shippingAddressDetail', addrDetail);
+                localStorage.setItem('cart_form_shippingAddressDetail', addrDetail);
+
+                if ($('input[name="deliveryOption"]:checked').attr('id') === 'deliveryOption1') {
+                    if (!addrDetail || !selectedProvince || !subdistrict || !district || !zipcode) {
+                        alert('กรุณากรอกข้อมูลที่อยู่จัดส่งให้ครบทุกช่องก่อนยืนยันคำสั่งซื้อ');
+                        return;
+                    }
+                }
+
+                let fullAddress = 'รับที่หน้าร้าน | ผู้รับ: ' + receiverName + ' โทร. ' + receiverPhone;
+                if ($('input[name="deliveryOption"]:checked').attr('id') !== 'deliveryOption3') {
+                    fullAddress = 'ผู้รับ: ' + receiverName + ' โทร. ' + receiverPhone + ' | ที่อยู่: ' + addrDetail + ' ต.' + subdistrict + ' อ.' + district + ' จ.' + selectedProvince + ' ' + zipcode;
+                }
+
+                let payload = {
+                    cart_type: cartType,
+                    delivery_date: deliveryDate,
+                    shipping_address: fullAddress,
+                    province: selectedProvince,
+                    payment_method: paymentMethod,
+                    delivery_option: $('input[name="deliveryOption"]:checked').attr('id'),
+                    items: cart,
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone: receiverPhone,
+                    address_detail: addrDetail,
+                    subdistrict: subdistrict,
+                    district: district,
+                    zipcode: zipcode
+                };
+
+                let submitOrder = async function (finalPayload) {
+                    try {
+                        const orderResponse = await fetch('api/checkout.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(finalPayload)
+                        });
+                        const result = await orderResponse.json();
+                        if (result.success) {
+                            alert('สั่งซื้อสำเร็จ! รหัสอ้างอิง: ' + result.order_id);
+                            localStorage.removeItem('jaonuea_cart');
+                            localStorage.removeItem('jaonuea_cart_type');
+                            localStorage.removeItem('jaonuea_delivery_date');
+                            const formFields = ['firstName', 'lastName', 'receiverPhone', 'shippingAddressDetail', 'shippingSubdistrict', 'shippingDistrict', 'shippingProvince', 'shippingZipcode', 'deliveryOption', 'paymentOption'];
+                            formFields.forEach(field => localStorage.removeItem('cart_form_' + field));
+                            window.location.href = 'profile.html';
+                        } else {
+                            alert('เกิดข้อผิดพลาด: ' + (result.message || 'ไม่สามารถสร้างคำสั่งซื้อได้'));
+                            $('#btnConfirmOrder').prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>ยืนยันคำสั่งซื้อ');
+                        }
+                    } catch (error) {
+                        alert('ระบบเกิดขัดข้อง โปรดลองใหม่อีกครั้ง');
+                        $('#btnConfirmOrder').prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>ยืนยันคำสั่งซื้อ');
+                    }
+                };
+
+                let totalAmount = parseFloat($('#summary-total-amount').text().replace(/[^0-9.-]+/g, "")) || 0;
+                let requiresSlip = true;
+
+                if (requiresSlip) {
+                    const slipFile = $('#slipUpload')[0].files[0];
+                    if (!slipFile) {
+                        alert('กรุณาแนบสลิปโอนเงิน');
+                        return;
+                    }
+
+                    $('#btnConfirmOrder').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>กำลังตรวจสอบสลิป...');
+
+                    // Helper function to read QR code using jsQR with multi-pass scanning
+                    const readQR = (file) => {
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.getElementById('qrCanvas') || document.createElement('canvas');
+                                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+                                    const tryScan = (w, h, sx = 0, sy = 0, sw = img.width, sh = img.height) => {
+                                        try {
+                                            canvas.width = w;
+                                            canvas.height = h;
+                                            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+                                            const id = ctx.getImageData(0, 0, w, h);
+                                            let code = jsQR(id.data, w, h, { inversionAttempts: 'dontInvert' });
+                                            if (code && code.data) return code.data;
+                                            code = jsQR(id.data, w, h, { inversionAttempts: 'onlyInvert' });
+                                            if (code && code.data) return code.data;
+                                        } catch (err) { }
+                                        return null;
+                                    };
+
+                                    // 1. Scaled down (max 1000px) - ideal for phone screenshots
+                                    let maxDim = Math.max(img.width, img.height);
+                                    let scale = maxDim > 1000 ? 1000 / maxDim : 1;
+                                    let res = tryScan(Math.round(img.width * scale), Math.round(img.height * scale));
+                                    if (res) return resolve(res);
+
+                                    // 2. Bottom half region (where bank slip QR codes reside)
+                                    let bY = Math.round(img.height * 0.35);
+                                    let bH = img.height - bY;
+                                    let bScale = Math.max(img.width, bH) > 1000 ? 1000 / Math.max(img.width, bH) : 1;
+                                    res = tryScan(Math.round(img.width * bScale), Math.round(bH * bScale), 0, bY, img.width, bH);
+                                    if (res) return resolve(res);
+
+                                    // 3. Original dimension (if reasonable)
+                                    if (maxDim <= 2000) {
+                                        res = tryScan(img.width, img.height);
+                                        if (res) return resolve(res);
+                                    }
+
+                                    resolve(null);
+                                };
+                                img.onerror = () => resolve(null);
+                                img.src = e.target.result;
+                            };
+                            reader.onerror = () => resolve(null);
+                            reader.readAsDataURL(file);
+                        });
+                    };
+
+                    try {
+                        const qrData = await readQR(slipFile);
+                        if (!qrData) {
+                            alert('สลิปไม่ถูกต้อง: ไม่พบข้อมูล QR Code บนสลิป กรุณาอัปโหลดรูปภาพสลิปที่ชัดเจน');
+                            $('#btnConfirmOrder').prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>ยืนยันคำสั่งซื้อ');
+                            return;
+                        }
+
+                        let formData = new FormData();
+                        formData.append('file', slipFile);
+                        formData.append('qr_payload', qrData);
+                        let expectedAmount = $('#summary-grand-total').text().replace(/[^\d.-]/g, '');
+                        formData.append('expected_amount', expectedAmount);
+
+                        const verifyResponse = await fetch('api/verify_slip_mock.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const verifyResult = await verifyResponse.json();
+
+                        if (verifyResult.success) {
+                            payload.slip_image_url = verifyResult.slip_url;
+                            $('#btnConfirmOrder').html('<i class="fas fa-spinner fa-spin me-2"></i>กำลังสร้างคำสั่งซื้อ...');
+                            submitOrder(payload);
+                        } else {
+                            alert('สลิปไม่ถูกต้อง: ' + (verifyResult.message || 'ชื่อบัญชีผู้รับเงินไม่ถูกต้อง'));
+                            $('#btnConfirmOrder').prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>ยืนยันคำสั่งซื้อ');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('สลิปไม่ถูกต้อง: ไม่สามารถตรวจสอบสลิปได้ กรุณาลองใหม่อีกครั้ง');
+                        $('#btnConfirmOrder').prop('disabled', false).html('<i class="fas fa-check-circle me-2"></i>ยืนยันคำสั่งซื้อ');
+                    }
+                } else {
+                    $('#btnConfirmOrder').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>กำลังดำเนินการ...');
+                    submitOrder(payload);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+            }
+        }
+
+        function updatePaymentOptions() {
+            $('#payTransfer').prop('checked', true);
+            updatePaymentUI();
+        }
+
+        function updatePaymentUI() {
+            let totalAmount = parseFloat($('#summary-total-amount').text().replace(/[^0-9.-]+/g, "")) || 0;
+
+            let cartType = getCartType();
+            if (cartType === 'wholesale') {
+                let payable = totalAmount / 2;
+                $('#payable-label').text('มัดจำล่วงหน้า (50%)');
+                $('#summary-grand-total').text('฿' + payable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            } else {
+                $('#payable-label').text('ยอดชำระสุทธิ');
+                $('#summary-grand-total').text('฿' + totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            }
+
+            $('#transferDetails').show();
+        }
+
+        async function renderCart() {
+            let cart = getCart();
+            let tbody = $('#cart-items');
+
+            // ซ่อนหรือแสดงกล่องที่อยู่จัดส่งตามตัวเลือกการจัดส่ง
+            if ($('#deliveryOption3').is(':checked')) {
+                $('#deliveryAddressSection').hide();
+                $('#shipping-desc').text('(รับที่หน้าร้าน)');
+            } else {
+                $('#deliveryAddressSection').show();
+                $('#shipping-desc').text('(รถควบคุมอุณหภูมิ)');
+            }
+
+            // ตรวจสอบทันทีก่อนเรียก async เพื่อป้องกันการ append ซ้ำซ้อน
+            if (!cart || cart.length === 0) {
+                tbody.html('<tr><td colspan="4" class="text-center py-5 text-muted">ไม่มีสินค้าในตะกร้า</td></tr>');
+                $('#btnConfirmOrder').prop('disabled', true);
+                $('#summary-subtotal').text('฿0.00');
+                $('#summary-shipping').text('฿0.00');
+                $('#summary-total-kg').text('0');
+                $('#summary-total-amount').text('฿0.00');
+                $('#summary-grand-total').text('฿0.00');
+                $('#shipping-status-container').empty();
+                $('#wholesale-status-container').empty();
+                $('#wholesale-discount-row').hide();
+                $('#shipping-discount-row').hide();
+                updateCartBadge();
+                return;
+            }
+
+            let totalWeight = 0;
+            let subtotal = 0;
+            let baseSubtotal = 0;
+            let hasOutOfStock = false;
+
+            let cartType = getCartType();
+
+            // Fetch latest stock
+            let stockData = {};
+            try {
+                const res = await fetch('api/client.php?action=get_stock');
+                const data = await res.json();
+                if (data.success) {
+                    stockData = data.stock;
+                }
+            } catch (e) {
+                console.error("Failed to fetch stock", e);
+            }
+
+            let outOfStockPromptShown = window.outOfStockPromptShown || false;
+
+            // Calculate total weight to apply dynamic tier pricing for wholesale
+            cart.forEach(item => {
+                let itemId = item.id.toString().replace(/\D/g, ''); // Extract numeric ID
+                let currentStock = stockData[itemId] !== undefined ? stockData[itemId] : 0;
+                // Wholesale ignores out of stock
+                if (cartType === 'retail' && currentStock <= 0) {
+                    hasOutOfStock = true;
+                } else {
+                    totalWeight += item.quantity;
+                }
+            });
+
+            if (hasOutOfStock && !outOfStockPromptShown && cartType === 'retail') {
+                window.outOfStockPromptShown = true;
+                setTimeout(() => {
+                    if (confirm('สินค้าบางรายการที่คุณเลือกไว้ "จำหน่ายหมดแล้ว"\nคุณต้องการกลับไปเลือกสินค้าอื่นเพิ่มเติมหรือไม่?')) {
+                        window.location.href = 'shop.php';
+                    }
+                }, 500);
+            }
+
+            let tierDiscount = 0;
+            if (cartType === 'wholesale') {
+                if (totalWeight >= 25) tierDiscount = 0.10;
+            }
+
+            let rowsHtml = '';
+            $('#btnConfirmOrder').prop('disabled', hasOutOfStock);
+            cart.forEach(item => {
+                let itemId = item.id.toString().replace(/\D/g, ''); // Extract numeric ID
+                let currentStock = stockData[itemId] !== undefined ? stockData[itemId] : 0;
+                let isOutOfStock = (cartType === 'retail' && currentStock <= 0);
+
+                // Adjust quantity if exceeds stock (only for retail)
+                if (cartType === 'retail' && !isOutOfStock && item.quantity > currentStock) {
+                    item.quantity = currentStock;
+                }
+
+                let currentPrice = item.price;
+                if (cartType === 'wholesale' && item.basePrice) {
+                    currentPrice = item.basePrice * (1 - tierDiscount);
+                }
+
+                let itemTotal = isOutOfStock ? 0 : currentPrice * item.quantity;
+                if (!isOutOfStock) {
+                    subtotal += itemTotal;
+                    if (cartType === 'wholesale' && item.basePrice) {
+                        baseSubtotal += item.basePrice * item.quantity;
+                    }
+                }
+
+                let outOfStockLabel = isOutOfStock ? '<span class="badge bg-danger ms-2">สินค้าหมด</span>' : '';
+
+                let qtyControl = '';
+                if (cartType === 'wholesale') {
+                    qtyControl = `<input type="number" class="form-control form-control-sm text-center qty-input mx-1" data-id="${item.id}" value="${item.quantity}" min="0">`;
+                } else {
+                    qtyControl = `
+                        <button class="btn btn-sm btn-outline-secondary btn-decrease" data-id="${item.id}"><i class="fas fa-minus"></i></button>
+                        <input type="number" class="form-control form-control-sm text-center qty-input mx-1" style="width: 50px;" data-id="${item.id}" value="${item.quantity}" min="1" max="${currentStock}" readonly>
+                        <button class="btn btn-sm btn-outline-secondary btn-increase" data-id="${item.id}"><i class="fas fa-plus"></i></button>
+                    `;
+                }
+
+                rowsHtml += `
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <img src="${item.image}" alt="${item.name}" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                <div>
+                                    <h6 class="mb-0 fw-bold">${item.name} ${outOfStockLabel}</h6>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="align-middle fw-semibold text-secondary">
+                            ${formatCurrency(currentPrice)}
+                        </td>
+                        <td class="align-middle text-center">
+                            <div class="d-flex align-items-center justify-content-center">
+                                ${qtyControl}
+                            </div>
+                        </td>
+                        <td class="align-middle text-center">
+                            <button class="btn btn-sm btn-danger btn-remove" data-id="${item.id}" title="ลบออกจากตะกร้า"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.html(rowsHtml);
+
+            // Update Summary Area
+            $('#summary-subtotal').text(formatCurrency(cartType === 'wholesale' ? baseSubtotal : subtotal));
+            $('#summary-total-kg').text(totalWeight);
+
+            let wholesaleStatus = '';
+            let wsDiscountAmount = 0;
+
+            if (totalWeight > 0 && totalWeight < 25) {
+                wholesaleStatus = `<div class="alert alert-info py-2 mb-3 small border-info text-dark"><i class="fas fa-info-circle me-1 text-info"></i> สั่งซื้อล่วงหน้า 25 กิโลขึ้นไป จะได้รับส่วนลด 10%</div>`;
+            } else if (cartType === 'wholesale' && totalWeight >= 25) {
+                wholesaleStatus = `<div class="alert alert-success py-2 mb-3 small border-success text-dark"><i class="fas fa-check-circle me-1 text-success"></i> น้ำหนักรวม ${totalWeight} กก. คุณได้รับส่วนลดขายส่ง 10%</div>`;
+                wsDiscountAmount = baseSubtotal - subtotal;
+            }
+
+            $('#wholesale-status-container').html(wholesaleStatus);
+
+            let deliveryDate = $('#cart-preorder-date').val() || getDeliveryDate();
+            let isPickup = ($('input[name="deliveryOption"]:checked').attr('id') === 'deliveryOption3');
+
+            if (cartType === 'wholesale') {
+                $('#wholesale-date-container').show();
+                let labelText = isPickup ? '<i class="fas fa-store me-1"></i> วันรับสินค้า:' : '<i class="fas fa-truck me-1"></i> ต้องจัดส่งสินค้าให้ลูกค้า:';
+                $('#ws-date-label').html(labelText);
+
+                let rawDate = String(deliveryDate).trim();
+                let isZero = (!rawDate || rawDate === '0000-00-00' || rawDate.startsWith('0000') || rawDate.startsWith('1899') || rawDate === '30/11/1899');
+                let formattedDeliveryDate = '';
+
+                if (isZero) {
+                    let d = new Date();
+                    d.setDate(d.getDate() + 3);
+                    formattedDeliveryDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                } else if (rawDate.includes('-')) {
+                    let p = rawDate.split('-');
+                    if (p.length === 3 && p[0].length === 4) {
+                        formattedDeliveryDate = `${p[2].padStart(2, '0')}/${p[1].padStart(2, '0')}/${p[0]}`;
+                    } else if (p.length === 3 && p[2].length === 4) {
+                        formattedDeliveryDate = `${p[0].padStart(2, '0')}/${p[1].padStart(2, '0')}/${p[2]}`;
+                    }
+                } else if (rawDate.includes('/')) {
+                    let parts = rawDate.split('/');
+                    if (parts.length === 3) {
+                        let day = parseInt(parts[0], 10);
+                        let month = parseInt(parts[1], 10);
+                        let year = parseInt(parts[2], 10);
+                        if (month > 12 && day <= 12) {
+                            let tmp = day; day = month; month = tmp;
+                        }
+                        formattedDeliveryDate = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+                    }
+                }
+                if (window.cartDateFp && formattedDeliveryDate) {
+                    window.cartDateFp.setDate(formattedDeliveryDate, false);
+                } else if ($('#cart-preorder-date').length && formattedDeliveryDate) {
+                    $('#cart-preorder-date').val(formattedDeliveryDate);
+                }
+            } else {
+                $('#wholesale-date-container').hide();
+            }
+
+            if (wsDiscountAmount > 0) {
+                $('#wholesale-discount-row').show();
+                $('#summary-ws-discount').text('-' + formatCurrency(wsDiscountAmount));
+            } else {
+                $('#wholesale-discount-row').hide();
+            }
+
+            let shipping = 0;
+            let province = $('#shippingProvince').val();
+            let deliveryOpt = $('input[name="deliveryOption"]:checked').attr('id');
+            if (deliveryOpt !== 'deliveryOption3') { // Not pickup
+                shipping = calculateShipping(totalWeight, province);
+            }
+
+            let shippingStatus = '';
+            let shippingDiscount = 0;
+            $('#shipping-status-container').html(shippingStatus);
+            $('#summary-shipping').text(formatCurrency(shipping));
+
+
+            let totalAmount = subtotal + shipping;
+            $('#summary-total-amount').text(formatCurrency(totalAmount));
+
+            // Payable Amount (100% or 50% deposit)
+            let payable = totalAmount;
+
+            if (cartType === 'wholesale') {
+                payable = totalAmount / 2;
+                $('#payable-label').text('มัดจำล่วงหน้า (50%)');
+            } else {
+                $('#payable-label').text('ยอดชำระสุทธิ');
+            }
+
+            $('#summary-grand-total').text(formatCurrency(payable));
+            updatePaymentUI(); // Update UI if threshold crosses
+            updateCartBadge(); // Refresh top cart badge
+        }
+    </script>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5 class="text-white d-flex align-items-center mb-3">
+                        <img src="assets/img/logo.jpg" alt="Logo" height="30" class="me-2 rounded-circle"
+                            onerror="this.src='https://via.placeholder.com/30/610C10/D4AF37?text=JN';">
+                        จ้าวเนื้อ๑
+                    </h5>
+                    <p class="small">จำหน่ายเนื้อวัว ทั้งปลีกและส่ง </p>
+                    <div class="social-icons mt-3">
+                        <a href="https://www.facebook.com/" target="_blank"><i class="fab fa-facebook"></i></a>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#lineQrModal"><i class="fab fa-line"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4 mb-lg-0">
+                    <h5>เมนูหลัก</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="index.html">หน้าแรก</a></li>
+                        <li class="mb-2"><a href="shop.php">สั่งซื้อสินค้า</a></li>
+                        <li class="mb-2"><a href="login.html">สมัครสมาชิก/เข้าสู่ระบบ</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4 mb-lg-0">
+                    <h5>บริการ</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="shop.php">เนื้อวัวปลีก</a></li>
+                        <li class="mb-2"><a href="shop.php?tab=wholesale">ราคาส่งสำหรับร้านอาหาร</a></li>
+                        <li class="mb-2"><a href="#" data-bs-toggle="modal"
+                                data-bs-target="#lineQrModal">ติดต่อรับซื้อโคเนื้อ</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h5>ติดต่อเรา</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> <span class="user-select-all">1 หมู่
+                                6 ต.โพรงจระเข้ อ.ย่านตาขาว จ.ตรัง 92140</span></li>
+                        <li class="mb-2"><i class="fas fa-phone me-2"></i> <span
+                                class="user-select-all">065-708-1497</span></li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2"></i> <span
+                                class="user-select-all">jaonuea@example.com</span></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-4 mb-3 border-secondary">
+            <div class="text-center small">
+                &copy; 2026 จ้าวเนื้อ๑ (Jaew Nuer). All Rights Reserved. CS Project.
+            </div>
+        </div>
+    </footer>
+
+
+</body>
+
+</html>

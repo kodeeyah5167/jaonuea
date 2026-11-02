@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - จ้าวเนื้อ๑</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css?v=27">
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(rgba(26, 26, 26, 0.8), rgba(26, 26, 26, 0.8)), url('https://images.unsplash.com/photo-1544025162-8311ebc5126c?q=80&w=2069&auto=format&fit=crop') center/cover no-repeat;
+        }
+
+        .auth-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .social-btn {
+            height: 45px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #495057;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .social-btn:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .form-control {
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Back to Home -->
+    <div class="position-absolute top-0 start-0 p-4 z-3">
+        <a href="index.html" class="btn btn-sm btn-outline-light"><i class="fas fa-arrow-left me-2"></i>กลับหน้าหลัก</a>
+    </div>
+
+    <div class="auth-container p-3 p-md-0">
+        <div id="g_id_onload" data-client_id="16094435296-5odb0fa2fo1jdhc2ivo9fvi7eq19or14.apps.googleusercontent.com"
+            data-context="signin" data-ux_mode="popup" data-callback="handleGoogleLogin" data-auto_prompt="false">
+        </div>
+        <div class="auth-card row g-0">
+            <!-- Form Side -->
+            <div class="col-12 p-4 p-md-5">
+                <!-- Dynamic Alert Container -->
+                <div id="auth-alert-container"></div>
+
+                <!-- Login Section -->
+                <div id="login-section">
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold" style="color: #3d4a5d; font-family: 'Sarabun', sans-serif;">เข้าสู่ระบบ</h3>
+                    </div>
+
+                    <div class="mb-4 text-center">
+                        <!-- Social Login Buttons -->
+                        <div class="d-flex flex-column gap-3 mb-4">
+                            <div class="position-relative">
+                                <a href="#" class="social-btn text-decoration-none shadow-sm w-100">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                                        height="20" class="me-2"> ลงชื่อเข้าใช้ด้วย Google
+                                </a>
+                                <div
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; opacity: 0.01;">
+                                    <div class="g_id_signin" data-type="standard" data-shape="rectangular"
+                                        data-theme="outline" data-text="signin_with" data-size="large"
+                                        data-logo_alignment="center" data-width="400"></div>
+                                </div>
+                            </div>
+
+                            <a href="https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=2011186653&redirect_uri=http://localhost/jaonuea/api/line_callback.php&state=login123&scope=profile%20openid%20email"
+                                class="social-btn text-decoration-none shadow-sm w-100">
+                                <i class="fab fa-line me-2 text-success" style="font-size: 1.2rem;"></i>
+                                ลงชื่อเข้าใช้ด้วย LINE
+                            </a>
+                        </div>
+
+                        <div class="d-flex align-items-center my-4">
+                            <hr class="flex-grow-1 text-muted opacity-25">
+                            <span class="mx-3 text-muted"
+                                style="font-size: 0.9rem;">หรือเข้าสู่ระบบผ่านบัญชีอีเมล</span>
+                            <hr class="flex-grow-1 text-muted opacity-25">
+                        </div>
+
+                        <!-- Email Login Form -->
+                        <form id="loginForm" action="index.html" onsubmit="return handleLogin(event)"
+                            class="text-start">
+                            <div class="mb-3">
+                                <input type="email" class="form-control shadow-sm" id="loginEmail" required
+                                    placeholder="อีเมล" style="height: 45px; border-color: #dee2e6;">
+                            </div>
+                            <div class="mb-2">
+                                <div class="input-group shadow-sm">
+                                    <input type="password" class="form-control" id="loginPassword" required
+                                        placeholder="รหัสผ่าน"
+                                        style="height: 45px; border-right: none; border-color: #dee2e6;">
+                                    <button class="btn btn-outline-secondary toggle-password bg-white" type="button"
+                                        tabindex="-1" style="border-left: none; border-color: #dee2e6;"><i
+                                            class="fas fa-eye-slash text-muted"></i></button>
+                                </div>
+                            </div>
+                            <div class="text-end mb-4">
+                                <a href="#"
+                                    onclick="openForgotPassword(document.getElementById('loginEmail').value); return false;"
+                                    class="text-muted text-decoration-underline"
+                                    style="font-size: 0.85rem;">ลืมรหัสผ่าน?</a>
+                            </div>
+
+                            <button type="submit" class="btn w-100 shadow-sm"
+                                style="height: 45px; font-weight: 500; font-size: 1rem; background-color: #3b424a; color: white; border-radius: 4px;">เข้าสู่ระบบ</button>
+                        </form>
+
+                        <div class="text-center mt-4 pt-2">
+                            <span class="text-muted" style="font-size: 0.9rem;">ยังไม่มีบัญชี?</span> <a href="#"
+                                onclick="toggleAuth('register'); return false;"
+                                class="text-muted text-decoration-underline" style="font-size: 0.9rem;">สมัครสมาชิก</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Register Section -->
+                <div id="register-section" style="display: none;">
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold" style="color: #3d4a5d; font-family: 'Sarabun', sans-serif;">สมัครสมาชิก</h3>
+                    </div>
+
+                    <div class="mb-4 text-center">
+                        <!-- Social Register Buttons -->
+                        <div class="d-flex flex-column gap-3 mb-4">
+                            <div class="position-relative">
+                                <a href="#" class="social-btn text-decoration-none shadow-sm w-100">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                                        height="20" class="me-2"> สมัครสมาชิกด้วย Google
+                                </a>
+                                <div
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; opacity: 0.01;">
+                                    <div class="g_id_signin" data-type="standard" data-shape="rectangular"
+                                        data-theme="outline" data-text="signup_with" data-size="large"
+                                        data-logo_alignment="center" data-width="400"></div>
+                                </div>
+                            </div>
+
+                            <a href="https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=2011186653&redirect_uri=http://localhost/jaonuea/api/line_callback.php&state=register123&scope=profile%20openid%20email"
+                                id="register-line-btn"
+                                class="social-btn text-decoration-none shadow-sm w-100">
+                                <i class="fab fa-line me-2 text-success" style="font-size: 1.2rem;"></i> สมัครสมาชิกด้วย
+                                LINE
+                            </a>
+                        </div>
+
+                        <div class="d-flex align-items-center my-4">
+                            <hr class="flex-grow-1 text-muted opacity-25">
+                            <span class="mx-3 text-muted" style="font-size: 0.9rem;">หรือสมัครผ่านบัญชีอีเมล</span>
+                            <hr class="flex-grow-1 text-muted opacity-25">
+                        </div>
+
+                        <!-- Email Register Form -->
+                        <form id="registerForm" onsubmit="return handleRegister(event)" class="text-start">
+                            <div class="mb-3">
+                                <input type="email" class="form-control shadow-sm" id="regEmail" required
+                                    placeholder="อีเมล" style="height: 45px; border-color: #dee2e6;">
+                            </div>
+                            <div class="mb-1">
+                                <div class="input-group shadow-sm">
+                                    <input type="password" class="form-control" id="regPassword" required
+                                        placeholder="รหัสผ่าน"
+                                        style="height: 45px; border-right: none; border-color: #dee2e6;">
+                                    <button class="btn btn-outline-secondary toggle-password bg-white" type="button"
+                                        tabindex="-1" style="border-left: none; border-color: #dee2e6;"><i
+                                            class="fas fa-eye text-muted"></i></button>
+                                </div>
+                            </div>
+                            <div class="mb-3 ps-2">
+                                <div class="small text-muted req-length" style="font-size: 0.8rem;">*
+                                    รหัสผ่านจะต้องมีตัวอักษรอย่างน้อย 8 ตัวอักษร</div>
+                                <div class="small text-muted req-complex" style="font-size: 0.8rem;">*
+                                    รหัสผ่านจะต้องมีตัวอักษรพิมพ์เล็ก, พิมพ์ใหญ่ และตัวเลข</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="input-group shadow-sm">
+                                    <input type="password" class="form-control" id="regConfirmPassword" required
+                                        placeholder="ยืนยันรหัสผ่าน"
+                                        style="height: 45px; border-right: none; border-color: #dee2e6;">
+                                    <button class="btn btn-outline-secondary toggle-password bg-white" type="button"
+                                        tabindex="-1" style="border-left: none; border-color: #dee2e6;"><i
+                                            class="fas fa-eye text-muted"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 form-check ps-4">
+                                <input type="checkbox" class="form-check-input" id="regTerms" required
+                                    style="border-color: #adb5bd;">
+                                <label class="form-check-label text-muted" for="regTerms" style="font-size: 0.9rem;">
+                                    ฉันรับทราบและยอมรับ <a href="#"
+                                        class="text-primary text-decoration-none">นโยบายความเป็นส่วนตัว</a>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn w-100 shadow-sm"
+                                style="height: 45px; font-weight: 500; font-size: 1rem; background-color: #3b424a; color: white; border-radius: 4px;">สมัครสมาชิก</button>
+                        </form>
+
+                        <div class="text-center mt-4 pt-2">
+                            <span class="text-muted" style="font-size: 0.9rem;">มีบัญชีอยู่แล้ว?</span> <a href="#"
+                                onclick="toggleAuth('login'); return false;"
+                                class="text-muted text-decoration-underline" style="font-size: 0.9rem;">เข้าสู่ระบบ</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forgot Password Section -->
+                <div id="forgot-section" style="display: none;">
+                    <!-- Step 1: Request Reset Token (Email / LINE Routing) -->
+                    <div id="forgot-step-request">
+                        <div class="text-center mb-3">
+                            <h3 class="fw-bold" style="color: #3d4a5d; font-family: 'Sarabun', sans-serif;">ลืมรหัสผ่าน
+                            </h3>
+                            <p class="text-muted small mb-0">
+                                กรอกอีเมลของคุณเพื่อขอรับรหัส Token สำหรับรีเซ็ตรหัสผ่าน
+                            </p>
+                        </div>
+
+                        <form id="forgotRequestForm" onsubmit="return handleRequestReset(event)" class="text-start">
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">อีเมล</label>
+                                <input type="email" class="form-control shadow-sm" id="forgotEmail" required
+                                    placeholder="ระบุอีเมลของบัญชีที่ต้องการกู้คืน"
+                                    style="height: 45px; border-color: #dee2e6;">
+                            </div>
+
+                            <button type="submit" id="btnRequestResetToken" class="btn w-100 shadow-sm mb-3"
+                                style="height: 45px; font-weight: 500; font-size: 1rem; background-color: #610C10; color: white; border-radius: 4px;">
+                                <i class="fas fa-paper-plane me-2"></i>ขอรหัส Token รีเซ็ตรหัสผ่าน
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-2">
+                            <a href="#" onclick="showForgotConfirmStep(); return false;"
+                                class="small text-primary text-decoration-underline d-block mb-2">มีรหัส Token แล้ว?
+                                กรอกรหัสเพื่อตั้งรหัสผ่านใหม่</a>
+                            <a href="#" onclick="toggleAuth('login'); return false;"
+                                class="text-muted text-decoration-underline"
+                                style="font-size: 0.9rem;">กลับไปหน้าเข้าสู่ระบบ</a>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Enter Token & Set New Password -->
+                    <div id="forgot-step-confirm" style="display: none;">
+                        <div class="text-center mb-3">
+                            <h3 class="fw-bold" style="color: #3d4a5d; font-family: 'Sarabun', sans-serif;">
+                                ตั้งรหัสผ่านใหม่</h3>
+                            <p class="text-muted small mb-0">กรอกรหัส Token ที่ได้รับทางอีเมล เพื่อกำหนดรหัสผ่านใหม่</p>
+                        </div>
+
+                        <div id="forgot-channel-banner" class="mb-3"></div>
+
+                        <form id="forgotForm" onsubmit="return handleResetPassword(event)" class="text-start">
+                            <input type="hidden" id="forgotTargetEmail" value="">
+                            <div class="mb-3" id="forgotTokenInputGroup">
+                                <label class="form-label small text-muted fw-bold">รหัส Token ยืนยันตัวตน</label>
+                                <input type="text" class="form-control shadow-sm text-center fw-bold" id="forgotToken"
+                                    required placeholder="กรอกรหัส Token 6 หลัก หรือรหัสจากลิงก์"
+                                    style="height: 45px; border-color: #610C10; letter-spacing: 2px;">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small text-muted">รหัสผ่านใหม่</label>
+                                <div class="input-group shadow-sm">
+                                    <input type="password" class="form-control" id="forgotNewPassword" required
+                                        placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)"
+                                        style="height: 45px; border-right: none; border-color: #dee2e6;">
+                                    <button class="btn btn-outline-secondary toggle-password bg-white" type="button"
+                                        tabindex="-1" style="border-left: none; border-color: #dee2e6;"><i
+                                            class="fas fa-eye-slash text-muted"></i></button>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label small text-muted">ยืนยันรหัสผ่านใหม่</label>
+                                <div class="input-group shadow-sm">
+                                    <input type="password" class="form-control" id="forgotConfirmPassword" required
+                                        placeholder="ยืนยันรหัสผ่านใหม่"
+                                        style="height: 45px; border-right: none; border-color: #dee2e6;">
+                                    <button class="btn btn-outline-secondary toggle-password bg-white" type="button"
+                                        tabindex="-1" style="border-left: none; border-color: #dee2e6;"><i
+                                            class="fas fa-eye-slash text-muted"></i></button>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btnConfirmResetPassword" class="btn w-100 shadow-sm mb-3"
+                                style="height: 45px; font-weight: 500; font-size: 1rem; background-color: #610C10; color: white; border-radius: 4px;">
+                                <i class="fas fa-key me-2"></i>บันทึกรหัสผ่านใหม่
+                            </button>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <a href="#" onclick="showForgotRequestStep(); return false;"
+                                    class="text-muted text-decoration-underline" style="font-size: 0.85rem;">ขอรหัส
+                                    Token ใหม่</a>
+                                <a href="#" onclick="toggleAuth('login'); return false;"
+                                    class="text-muted text-decoration-underline"
+                                    style="font-size: 0.85rem;">กลับไปหน้าเข้าสู่ระบบ</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal กรอกข้อมูลโปรไฟล์หลังจากสมัครสมาชิกเสร็จ (บังคับกรอกชื่อและเบอร์โทรศัพท์) -->
+    <div class="modal fade" id="setupProfileModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold" style="color: #610C10;">
+                        <i class="fas fa-user-edit me-2"></i>กรอกข้อมูลโปรไฟล์
+                    </h5>
+                </div>
+                <div class="modal-body px-4 pt-2 pb-4">
+                    <p class="text-muted small mb-4">สมัครสมาชิกสำเร็จ! กรุณากรอกชื่อและเบอร์โทรศัพท์ของคุณเพื่อเริ่มต้นใช้งาน</p>
+
+                    <!-- รูปโปรไฟล์ -->
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block" style="cursor: pointer;"
+                            onclick="document.getElementById('setupProfileImage').click();"
+                            title="คลิกเพื่อเลือกรูปโปรไฟล์">
+                            <img id="setupAvatarPreview"
+                                src="https://ui-avatars.com/api/?name=User&background=610C10&color=D4AF37&size=150"
+                                alt="Profile Preview" class="rounded-circle shadow-sm border"
+                                style="width: 105px; height: 105px; object-fit: cover;">
+                            <span
+                                class="position-absolute bottom-0 end-0 bg-dark text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-2 border-white"
+                                style="width: 34px; height: 34px;">
+                                <i class="fas fa-camera" style="font-size: 0.85rem;"></i>
+                            </span>
+                        </div>
+                        <div class="mt-2">
+                            <input type="file" id="setupProfileImage" accept="image/*" class="d-none"
+                                onchange="previewSetupProfileImage(this)">
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                onclick="document.getElementById('setupProfileImage').click();">
+                                <i class="fas fa-image me-1"></i> เลือกรูปโปรไฟล์ (ไม่บังคับ)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ชื่อ -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-secondary mb-1">ชื่อ - นามสกุล <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="setupProfileName" placeholder="กรอกชื่อ - นามสกุลของคุณ"
+                            style="height: 44px;" required>
+                    </div>
+
+                    <!-- เบอร์โทรศัพท์ -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-secondary mb-1">เบอร์โทรศัพท์ <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control" id="setupProfilePhone" placeholder="กรอกเบอร์โทรศัพท์ (เช่น 0812345678)"
+                            maxlength="10" style="height: 44px;" required>
+                    </div>
+
+                    <div>
+                        <button type="button" class="btn w-100 text-white shadow-sm" id="btnSaveSetupProfile"
+                            style="height: 46px; font-weight: 600; background-color: #610C10; border-radius: 8px;"
+                            onclick="submitProfileSetup()">
+                            <i class="fas fa-check me-1"></i> บันทึกข้อมูลและเริ่มใช้งาน
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery & Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="assets/js/main.js?v=29"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentAuthMode = 'login';
+
+        $(document).ready(function () {
+            // Toggle Password Visibility
+            $('.toggle-password').on('click', function () {
+                const input = $(this).siblings('input');
+                const icon = $(this).find('i');
+
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').removeClass('fa-eye-slash').addClass('fa-eye');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye').removeClass('fa-eye-slash').addClass('fa-eye-slash');
+                }
+            });
+
+            // Password real-time validation
+            $('#regPassword').on('input', function () {
+                const password = $(this).val();
+
+                const hasLength = password.length >= 8;
+                const hasLower = /[a-z]/.test(password);
+                const hasUpper = /[A-Z]/.test(password);
+                const hasNumber = /\d/.test(password);
+                const hasComplex = hasLower && hasUpper && hasNumber;
+
+                if (hasLength) {
+                    $('.req-length').removeClass('text-danger text-muted').addClass('text-success')
+                        .html('<i class="fas fa-check me-1"></i> รหัสผ่านจะต้องมีตัวอักษรอย่างน้อย 8 ตัวอักษร');
+                } else if (password.length > 0) {
+                    $('.req-length').removeClass('text-success text-muted').addClass('text-danger')
+                        .html('<i class="fas fa-times me-1"></i> รหัสผ่านจะต้องมีตัวอักษรอย่างน้อย 8 ตัวอักษร');
+                } else {
+                    $('.req-length').removeClass('text-success text-danger').addClass('text-muted')
+                        .html('* รหัสผ่านจะต้องมีตัวอักษรอย่างน้อย 8 ตัวอักษร');
+                }
+
+                if (hasComplex) {
+                    $('.req-complex').removeClass('text-danger text-muted').addClass('text-success')
+                        .html('<i class="fas fa-check me-1"></i> รหัสผ่านจะต้องมีตัวอักษรพิมพ์เล็ก, พิมพ์ใหญ่ และตัวเลข');
+                } else if (password.length > 0) {
+                    $('.req-complex').removeClass('text-success text-muted').addClass('text-danger')
+                        .html('<i class="fas fa-times me-1"></i> รหัสผ่านจะต้องมีตัวอักษรพิมพ์เล็ก, พิมพ์ใหญ่ และตัวเลข');
+                } else {
+                    $('.req-complex').removeClass('text-success text-danger').addClass('text-muted')
+                        .html('* รหัสผ่านจะต้องมีตัวอักษรพิมพ์เล็ก, พิมพ์ใหญ่ และตัวเลข');
+                }
+            });
+
+            // Update LINE login URLs to preserve login/register mode and redirect URL
+            const urlParams = new URLSearchParams(window.location.search);
+            let redirectUrl = urlParams.get('redirect');
+            if (redirectUrl) {
+                $('#login-section a[href*="access.line.me"]').each(function () {
+                    let href = $(this).attr('href');
+                    href = href.replace(/state=[^&]+/, 'state=' + encodeURIComponent('login__' + redirectUrl));
+                    $(this).attr('href', href);
+                });
+                $('#register-section a[href*="access.line.me"]').each(function () {
+                    let href = $(this).attr('href');
+                    href = href.replace(/state=[^&]+/, 'state=' + encodeURIComponent('register__' + redirectUrl));
+                    $(this).attr('href', href);
+                });
+            }
+
+            // ตรวจสอบกรณี Redirect กลับมาจาก LINE Login / Register / Reset Password Link
+            const authError = urlParams.get('auth_error');
+            const errEmail = urlParams.get('email') || '';
+            const errProvider = urlParams.get('provider') || '';
+            const targetMode = urlParams.get('mode');
+            const setupProfile = urlParams.get('setup_profile');
+            const resetTokenParam = urlParams.get('reset_token');
+            const forgotSentParam = urlParams.get('forgot_sent');
+            const resetEmailParam = urlParams.get('reset_email') || '';
+
+            if (targetMode === 'register') {
+                toggleAuth('register', true);
+            }
+            if (authError === 'not_found') {
+                showUserNotFoundAlert(errEmail, errProvider);
+            } else if (authError === 'account_exists') {
+                showAccountExistsAlert(errEmail, errProvider);
+            } else if (resetTokenParam) {
+                // กรณีลูกค้ากดลิงก์รีเซ็ตรหัสผ่านจากในอีเมล
+                verifyTokenFromLink(resetTokenParam);
+            } else if (setupProfile === '1') {
+                // กรณีสมัครสมาชิกผ่าน LINE เสร็จ ให้ดึงข้อมูลเบื้องต้นและเด้งหน้าต่างกรอกโปรไฟล์ทันที
+                fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'check_session' })
+                })
+                    .then(r => r.json())
+                    .then(sessionRes => {
+                        if (sessionRes.logged_in) {
+                            openProfileSetupModal(sessionRes.fullname || '', sessionRes.profile_image || '', sessionRes.phone || '');
+                        } else {
+                            openProfileSetupModal();
+                        }
+                    })
+                    .catch(() => openProfileSetupModal());
+            }
+        });
+
+        function openProfileSetupModal(initialName = '', initialAvatar = '', initialPhone = '') {
+            if (initialName) {
+                $('#setupProfileName').val(initialName);
+            } else {
+                $('#setupProfileName').val('');
+            }
+            if (initialPhone) {
+                $('#setupProfilePhone').val(initialPhone);
+            } else {
+                $('#setupProfilePhone').val('');
+            }
+            if (initialAvatar) {
+                $('#setupAvatarPreview').attr('src', initialAvatar);
+            } else {
+                $('#setupAvatarPreview').attr('src', 'https://ui-avatars.com/api/?name=User&background=610C10&color=D4AF37&size=150');
+            }
+            $('#setupProfileImage').val('');
+
+            const modalEl = document.getElementById('setupProfileModal');
+            const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modalInstance.show();
+        }
+
+        function previewSetupProfileImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#setupAvatarPreview').attr('src', e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function finishProfileSetupRedirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let redirectUrl = urlParams.get('redirect');
+            window.location.href = redirectUrl ? redirectUrl : 'index.html';
+        }
+
+        async function submitProfileSetup() {
+            const nameVal = $('#setupProfileName').val().trim();
+            const phoneVal = $('#setupProfilePhone').val().trim();
+            const fileInput = document.getElementById('setupProfileImage');
+            const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+            if (!nameVal) {
+                alert('กรุณากรอกชื่อ - นามสกุล');
+                $('#setupProfileName').focus();
+                return;
+            }
+
+            const cleanPhone = phoneVal.replace(/[^0-9]/g, '');
+            if (!cleanPhone || cleanPhone.length < 9 || cleanPhone.length > 10) {
+                alert('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (9-10 หลัก)');
+                $('#setupProfilePhone').focus();
+                return;
+            }
+
+            const btn = $('#btnSaveSetupProfile');
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> กำลังบันทึก...');
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'update_profile');
+                formData.append('fullname', nameVal);
+                formData.append('phone', cleanPhone);
+                if (hasFile) {
+                    formData.append('profile_image', fileInput.files[0]);
+                }
+
+                const res = await fetch('api/client.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('cart_form_receiverName', nameVal);
+                    localStorage.setItem('cart_form_receiverPhone', cleanPhone);
+
+                    const modalEl = document.getElementById('setupProfileModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    finishProfileSetupRedirect();
+                } else {
+                    alert(data.message || 'บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+                    btn.prop('disabled', false).html(origHtml);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                btn.prop('disabled', false).html(origHtml);
+            }
+        }
+
+        function clearAuthAlert() {
+            $('#auth-alert-container').empty();
+        }
+
+        function showUserNotFoundAlert(email = '', provider = '') {
+            toggleAuth('register', true);
+
+            if (provider === 'line') {
+                $('#auth-alert-container').html(`
+                    <div class="alert alert-danger d-flex align-items-center justify-content-between py-2 px-3 mb-3 shadow-sm" role="alert">
+                        <div>
+                            <i class="fab fa-line text-success fs-5 me-2"></i>
+                            <strong>ไม่พบบัญชี LINE นี้ในระบบ</strong> กรุณากดปุ่ม <u>สมัครสมาชิกด้วย LINE</u> ด้านล่างเพื่อลงทะเบียนและกรอกข้อมูลพื้นฐาน
+                        </div>
+                    </div>
+                `);
+                $('#register-line-btn').css({
+                    'border': '2px solid #28a745',
+                    'background-color': '#eafaf1'
+                });
+                alert('ยังไม่พบบัญชี LINE นี้ในระบบ กรุณาสมัครสมาชิกด้วย LINE ก่อนเข้าสู่ระบบ');
+            } else if (provider === 'google') {
+                if (email && !email.includes('@line.local')) {
+                    $('#regEmail').val(email);
+                }
+                $('#auth-alert-container').html(`
+                    <div class="alert alert-danger d-flex align-items-center justify-content-between py-2 px-3 mb-3 shadow-sm" role="alert">
+                        <div>
+                            <i class="fab fa-google text-danger fs-5 me-2"></i>
+                            <strong>ไม่พบบัญชี Google นี้ในระบบ</strong> กรุณาสมัครสมาชิกด้วย Google ด้านล่างก่อนเข้าสู่ระบบ
+                        </div>
+                    </div>
+                `);
+                alert('ยังไม่พบบัญชี Google นี้ในระบบ กรุณาสมัครสมาชิกด้วย Google ก่อนเข้าสู่ระบบ');
+            } else {
+                if (email && !email.includes('@line.local')) {
+                    $('#regEmail').val(email);
+                }
+                $('#auth-alert-container').html(`
+                    <div class="alert alert-danger d-flex align-items-center justify-content-between py-2 px-3 mb-3 shadow-sm" role="alert">
+                        <div>
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>ไม่พบบัญชีนี้ กรุณาสมัครสมาชิกก่อนเข้าสู่ระบบ</strong>
+                        </div>
+                    </div>
+                `);
+                alert('ไม่พบบัญชีนี้ กรุณาสมัครสมาชิกก่อนเข้าสู่ระบบ');
+                setTimeout(() => $('#regPassword').focus(), 300);
+            }
+        }
+
+        function showAccountExistsAlert(email = '', provider = '') {
+            const isSocial = (provider === 'google' || provider === 'line');
+            if (isSocial) {
+                // หากสมัครสมาชิกผ่านบัญชี google หรือ line: ไม่ขึ้นให้กดลืมรหัสผ่าน (ลบข้อความ ลืมรหัสผ่าน และกล่องข้อความ กด ออก)
+                $('#auth-alert-container').html(`
+                    <div class="alert alert-warning border-warning d-flex align-items-center justify-content-between flex-wrap py-2 px-3 mb-3 shadow-sm text-dark" role="alert">
+                        <div>
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            <strong>มีบัญชีนี้ในระบบแล้ว</strong>
+                        </div>
+                    </div>
+                `);
+            } else {
+                // จะขึ้นให้กดลืมรหัสผ่านก็ต่อเมื่อสมัครสมาชิกผ่าน บัญชีอีเมล
+                const safeEmail = (email || $('#regEmail').val() || '').replace(/'/g, "\\'");
+                $('#auth-alert-container').html(`
+                    <div class="alert alert-warning border-warning d-flex align-items-center justify-content-between flex-wrap py-2 px-3 mb-3 shadow-sm text-dark" role="alert">
+                        <div>
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            <strong>มีบัญชีนี้ในระบบแล้ว</strong> ลืมรหัสผ่าน
+                            <a href="#" onclick="openForgotPassword('${safeEmail}'); return false;" class="btn btn-sm btn-danger fw-bold ms-1 px-2 py-0">กด</a>
+                        </div>
+                    </div>
+                `);
+            }
+        }
+
+        function openForgotPassword(email = '') {
+            clearAuthAlert();
+            currentAuthMode = 'forgot';
+            if (email) {
+                $('#forgotEmail').val(email);
+                $('#forgotTargetEmail').val(email);
+            } else if ($('#regEmail').val()) {
+                $('#forgotEmail').val($('#regEmail').val());
+                $('#forgotTargetEmail').val($('#regEmail').val());
+            } else if ($('#loginEmail').val()) {
+                $('#forgotEmail').val($('#loginEmail').val());
+                $('#forgotTargetEmail').val($('#loginEmail').val());
+            }
+            showForgotRequestStep();
+            $('#login-section').hide();
+            $('#register-section').hide();
+            $('#forgot-section').fadeIn(200);
+        }
+
+        function showForgotRequestStep() {
+            clearAuthAlert();
+            $('#forgot-step-confirm').hide();
+            $('#forgot-step-request').fadeIn(200);
+        }
+
+        function showForgotConfirmStep(channel = '', message = '', targetEmail = '', prefillToken = '') {
+            clearAuthAlert();
+            if (targetEmail) {
+                $('#forgotTargetEmail').val(targetEmail);
+            } else if ($('#forgotEmail').val()) {
+                $('#forgotTargetEmail').val($('#forgotEmail').val().trim());
+            }
+
+            if (prefillToken) {
+                $('#forgotToken').val(prefillToken);
+                $('#forgotTokenInputGroup').hide();
+            } else {
+                $('#forgotTokenInputGroup').show();
+            }
+
+            if (message) {
+                const badgeIcon = '<i class="fas fa-envelope text-danger me-2" style="font-size: 1.1rem;"></i>';
+                $('#forgot-channel-banner').html(`
+                    <div class="alert alert-info border-info py-2 px-3 small mb-0 shadow-sm">
+                        <div class="d-flex align-items-start">
+                            <div class="mt-1">${badgeIcon}</div>
+                            <div>${message}</div>
+                        </div>
+                    </div>
+                `);
+            } else {
+                $('#forgot-channel-banner').empty();
+            }
+
+            $('#login-section').hide();
+            $('#register-section').hide();
+            $('#forgot-section').show();
+            $('#forgot-step-request').hide();
+            $('#forgot-step-confirm').fadeIn(200);
+        }
+
+        async function verifyTokenFromLink(token) {
+            try {
+                const res = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'verify_reset_token',
+                        token: token
+                    })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    showForgotConfirmStep(
+                        'email',
+                        'ยืนยันลิงก์รีเซ็ตรหัสผ่านสำเร็จสำหรับบัญชี <strong>' + (result.email || '') + '</strong> กรุณากำหนดรหัสผ่านใหม่ด้านล่าง',
+                        result.email || '',
+                        token
+                    );
+                } else {
+                    openForgotPassword();
+                    $('#auth-alert-container').html(`
+                        <div class="alert alert-danger py-2 px-3 mb-3 shadow-sm" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i><strong>${result.message || 'ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว'}</strong>
+                        </div>
+                    `);
+                }
+            } catch (err) {
+                console.error(err);
+                openForgotPassword();
+            }
+        }
+
+        function toggleAuth(type, keepAlert = false) {
+            if (!keepAlert) {
+                clearAuthAlert();
+            }
+            currentAuthMode = type;
+            $('#forgot-section').hide();
+            if (type === 'register') {
+                $('#login-section').hide();
+                $('#register-section').fadeIn(200);
+            } else {
+                $('#register-section').hide();
+                $('#login-section').fadeIn(200);
+            }
+        }
+
+        function decodeJwtResponse(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        async function handleGoogleLogin(response) {
+            const responsePayload = decodeJwtResponse(response.credential);
+            try {
+                const fetchRes = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'social_login',
+                        mode: currentAuthMode === 'register' ? 'register' : 'login',
+                        provider: 'google',
+                        provider_id: responsePayload.sub,
+                        email: responsePayload.email,
+                        name: responsePayload.name || '',
+                        picture: responsePayload.picture || ''
+                    })
+                });
+
+                const result = await fetchRes.json();
+                if (result.status === 'success') {
+                    if (result.role === 'admin') {
+                        window.location.href = result.redirect || 'admin-dashboard.html';
+                        return false;
+                    }
+                    if (result.is_new_user) {
+                        openProfileSetupModal(responsePayload.name || '', responsePayload.picture || '');
+                        return false;
+                    }
+                    const urlParams = new URLSearchParams(window.location.search);
+                    let redirectUrl = urlParams.get('redirect');
+                    window.location.href = redirectUrl ? redirectUrl : (result.redirect || 'index.html');
+                } else if (result.code === 'USER_NOT_FOUND') {
+                    showUserNotFoundAlert(responsePayload.email, 'google');
+                } else if (result.code === 'ACCOUNT_EXISTS') {
+                    showAccountExistsAlert(responsePayload.email, 'google');
+                } else {
+                    alert(result.message || 'เกิดข้อผิดพลาด');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            clearAuthAlert();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    // หากเป็น Admin ให้ไปหน้า Admin ทันที
+                    if (result.role === 'admin') {
+                        window.location.href = result.redirect;
+                        return false;
+                    }
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    let redirectUrl = urlParams.get('redirect');
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = 'index.html'; // Default redirect
+                    }
+                } else if (result.code === 'USER_NOT_FOUND') {
+                    showUserNotFoundAlert(email, 'email');
+                } else {
+                    $('#auth-alert-container').html(`
+                        <div class="alert alert-danger py-2 px-3 mb-3 shadow-sm" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i><strong>${result.message}</strong>
+                        </div>
+                    `);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            clearAuthAlert();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
+                return;
+            }
+
+            // Validate password complexity
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/;
+            if (!passwordRegex.test(password)) {
+                alert('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ และตัวเลข');
+                return;
+            }
+
+            try {
+                const response = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'register',
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const initialName = email.split('@')[0] || '';
+                    openProfileSetupModal(initialName);
+                } else if (result.code === 'ACCOUNT_EXISTS') {
+                    showAccountExistsAlert(email, 'email');
+                } else {
+                    alert(result.message || 'ไม่สามารถสมัครสมาชิกได้');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+        }
+
+        async function handleRequestReset(e) {
+            e.preventDefault();
+            clearAuthAlert();
+            const identifier = document.getElementById('forgotEmail').value.trim();
+            if (!identifier) {
+                alert('กรุณากรอกอีเมลของคุณ');
+                return false;
+            }
+
+            const btn = $('#btnRequestResetToken');
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>กำลังตรวจสอบและส่งรหัส Token...');
+
+            try {
+                const response = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'request_password_reset',
+                        email: identifier
+                    })
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    $('#forgotToken').val('');
+                    showForgotConfirmStep(result.channel || 'email', result.message, result.email || identifier);
+                } else if (result.code === 'USER_NOT_FOUND') {
+                    showUserNotFoundAlert(identifier);
+                } else {
+                    $('#auth-alert-container').html(`
+                        <div class="alert alert-danger py-2 px-3 mb-3 shadow-sm" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i><strong>${result.message || 'เกิดข้อผิดพลาด'}</strong>
+                        </div>
+                    `);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            } finally {
+                btn.prop('disabled', false).html(origHtml);
+            }
+            return false;
+        }
+
+        async function handleResetPassword(e) {
+            e.preventDefault();
+            clearAuthAlert();
+            const email = (document.getElementById('forgotTargetEmail').value || document.getElementById('forgotEmail').value || '').trim();
+            const token = document.getElementById('forgotToken').value.trim();
+            const newPassword = document.getElementById('forgotNewPassword').value;
+            const confirmPassword = document.getElementById('forgotConfirmPassword').value;
+
+            if (!token) {
+                alert('กรุณากรอกรหัส Token ที่ได้รับทางอีเมล');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                alert('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                alert('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                return;
+            }
+
+            const btn = $('#btnConfirmResetPassword');
+            const origHtml = btn.html();
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>กำลังบันทึกรหัสผ่านใหม่...');
+
+            try {
+                const response = await fetch('api/auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'reset_password',
+                        email: email,
+                        token: token,
+                        new_password: newPassword
+                    })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert(result.message || 'ตั้งรหัสผ่านใหม่สำเร็จ กรุณาเข้าสู่ระบบ');
+                    document.getElementById('loginEmail').value = result.email || email;
+                    document.getElementById('loginPassword').value = '';
+                    document.getElementById('forgotToken').value = '';
+                    document.getElementById('forgotNewPassword').value = '';
+                    document.getElementById('forgotConfirmPassword').value = '';
+                    // ลบพารามิเตอร์ reset_token ออกจาก URL เพื่อความเรียบร้อย
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                    toggleAuth('login');
+                } else if (result.code === 'USER_NOT_FOUND') {
+                    showUserNotFoundAlert(email);
+                } else {
+                    $('#auth-alert-container').html(`
+                        <div class="alert alert-danger py-2 px-3 mb-3 shadow-sm" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i><strong>${result.message || 'เกิดข้อผิดพลาด'}</strong>
+                        </div>
+                    `);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            } finally {
+                btn.prop('disabled', false).html(origHtml);
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ทะเบียนฟาร์มโค - จ้าวเนื้อ๑ Admin</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <style>
+        body { background-color: #f4f6f9; }
+        .sidebar { min-height: 100vh; background-color: var(--dark-bg); color: white; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar a { color: #ccc; text-decoration: none; padding: 12px 20px; display: block; border-left: 4px solid transparent; transition: all 0.3s; }
+        .sidebar a:hover, .sidebar a.active { background-color: rgba(255,255,255,0.1); color: var(--secondary-color); border-left-color: var(--secondary-color); }
+        .admin-header { background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar" style="width: 250px;">
+            <div class="p-3 text-center border-bottom border-secondary">
+                <img src="assets/img/logo.jpg" alt="Logo" height="60" class="rounded-circle mb-2 bg-white p-1" onerror="this.src='https://via.placeholder.com/60/610C10/D4AF37?text=JN';">
+                <h5 class="text-secondary-custom font-heading mb-0">ระบบจัดการ จ้าวเนื้อ๑</h5>
+            </div>
+            <div class="py-3">
+                <a href="admin-dashboard.html"><i class="fas fa-chart-line me-2"></i> แดชบอร์ด & รายงาน</a>
+                <a href="admin-orders.html"><i class="fas fa-shopping-bag me-2"></i> จัดการคำสั่งซื้อ <span id="menu-orders-badge" class="badge bg-danger rounded-pill float-end" style="display:none;">0</span></a>
+                <a href="admin-farm.html" class="active"><i class="fas fa-tractor me-2"></i> ทะเบียนฟาร์มโค</a>
+                <a href="admin-purchase.html"><i class="fas fa-hand-holding-usd me-2"></i> รับซื้อโคเข้าฟาร์ม</a>
+                <a href="admin-inventory.html"><i class="fas fa-boxes me-2"></i> คลังสินค้า & แปลงสภาพ</a>
+                <a href="api/auth.php?action=logout" class="mt-5 text-danger"
+                    onclick="return confirm('คุณต้องการออกจากระบบใช่หรือไม่?');"><i
+                        class="fas fa-sign-out-alt me-2"></i> ออกจากระบบ</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow-1">
+            <!-- Header -->
+            <div class="admin-header p-3 d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0 text-primary-custom font-heading">ทะเบียนฟาร์มโค (Farm Management)</h4>
+            </div>
+
+            <div class="container-fluid px-4">
+                
+                <ul class="nav nav-tabs mb-4" id="farmTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab">ทะเบียนโคเนื้อ</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="growth-tab" data-bs-toggle="tab" data-bs-target="#growth" type="button" role="tab">บันทึกการเจริญเติบโต</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="health-tab" data-bs-toggle="tab" data-bs-target="#health" type="button" role="tab">ประวัติสุขภาพ</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="farmTabsContent">
+                    
+                    <!-- Tab 1: Cattle Registration -->
+                    <div class="tab-pane fade show active" id="register" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 fw-bold">รายชื่อโคเนื้อในฟาร์ม</h6>
+                                        <div class="input-group" style="width: 260px;">
+                                            <input type="text" id="cattle-search-input" class="form-control form-control-sm" placeholder="ค้นหา รหัส, เกษตรกร, สายพันธุ์..." oninput="renderCattlesTable()">
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="renderCattlesTable()"><i class="fas fa-search"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="ps-3">รูปภาพ</th>
+                                                        <th>Cattle ID</th>
+                                                        <th>น้ำหนักปัจจุบัน</th>
+                                                        <th>สถานะ</th>
+                                                        <th>ข้อมูลการรับซื้อโคเนื้อ</th>
+                                                        <th class="text-center pe-3">ลบ</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="farm-cattles-tbody">
+                                                    <tr>
+                                                        <td colspan="6" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Growth Tracking -->
+                    <div class="tab-pane fade" id="growth" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-white border-bottom py-3">
+                                        <h6 class="mb-0 fw-bold">บันทึกการชั่งน้ำหนัก</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form>
+                                            <div class="mb-3">
+                                                <label class="form-label">เลือกโคเนื้อ (Cattle ID)</label>
+                                                <select class="form-select" id="growth-cattle-select" onchange="fetchGrowth()">
+                                                    <option selected disabled value="">กรุณาเลือกโคเนื้อ...</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">วันที่ชั่งน้ำหนัก</label>
+                                                <input type="date" class="form-control" id="growth-date" required>
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="form-label">น้ำหนัก (กิโลกรัม)</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="growth-weight" placeholder="0.00" step="0.01" required>
+                                                    <span class="input-group-text">กก.</span>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-primary-custom w-100" onclick="submitGrowth()">บันทึกน้ำหนัก</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-white border-bottom py-3">
+                                        <h6 class="mb-0 fw-bold">ประวัติการเจริญเติบโต</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>วันที่ชั่ง</th>
+                                                        <th>น้ำหนัก (กก.)</th>
+                                                        <th>น้ำหนักที่เพิ่มขึ้น (+กก.)</th>
+                                                        <th>ผู้บันทึก</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="growth-tbody">
+                                                    <tr>
+                                                        <td colspan="4" class="text-center py-5 text-muted">กรุณาเลือกโคเนื้อเพื่อดูประวัติ</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Health Records -->
+                    <div class="tab-pane fade" id="health" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4 mb-4">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-white border-bottom py-3">
+                                        <h6 class="mb-0 fw-bold">บันทึกประวัติสุขภาพ</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form>
+                                            <div class="mb-3">
+                                                <label class="form-label">เลือกโคเนื้อ (Cattle ID)</label>
+                                                <select class="form-select" id="health-cattle-select" onchange="fetchHealth()">
+                                                    <option selected disabled value="">กรุณาเลือกโคเนื้อ...</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">ประเภทการบันทึก</label>
+                                                <select class="form-select" id="health-type">
+                                                    <option value="ฉีดวัคซีน">ฉีดวัคซีน</option>
+                                                    <option value="ถ่ายพยาธิ">ถ่ายพยาธิ</option>
+                                                    <option value="รักษาโรค">รักษาโรค</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">วันที่</label>
+                                                <input type="date" class="form-control" id="health-date" required>
+                                            </div>
+
+                                            <button type="button" class="btn btn-primary-custom w-100" onclick="submitHealth()">บันทึกข้อมูล</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-header bg-white border-bottom py-3">
+                                        <h6 class="mb-0 fw-bold">ประวัติสุขภาพล่าสุด</h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover align-middle mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="ps-3">วันที่</th>
+                                                        <th>Cattle ID</th>
+                                                        <th>ประเภท</th>
+
+                                                        <th>สัตวแพทย์/ผู้บันทึก</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="health-tbody">
+                                                    <tr>
+                                                        <td colspan="4" class="text-center py-5 text-muted">กรุณาเลือกโคเนื้อเพื่อดูประวัติ</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Cattle Purchase Info Modal (Read-only) -->
+    <div class="modal fade" id="viewCattleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title text-primary-custom fw-bold"><i class="fas fa-file-invoice-dollar me-2"></i>ข้อมูลการรับซื้อโคเนื้อ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="viewCattleModalBody">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+    <script>
+        let growthDateFp, healthDateFp;
+        let allCattlesList = [];
+        let cattleMap = {};
+        let viewCattleModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            viewCattleModal = new bootstrap.Modal(document.getElementById('viewCattleModal'));
+            fetchCattles();
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            growthDateFp = flatpickr('#growth-date', {
+                locale: 'th',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd/m/Y',
+                defaultDate: today,
+                maxDate: today
+            });
+            
+            healthDateFp = flatpickr('#health-date', {
+                locale: 'th',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'd/m/Y',
+                defaultDate: today,
+                maxDate: today
+            });
+        });
+
+        function fetchCattles() {
+            fetch('api/admin.php?action=get_cattles&_t=' + Date.now())
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        allCattlesList = data.data || [];
+                        cattleMap = {};
+                        allCattlesList.forEach(c => { cattleMap[c.id] = c; });
+                        renderCattlesTable();
+                        populateSelects(allCattlesList);
+                    } else {
+                        document.getElementById('farm-cattles-tbody').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลโคเนื้อในฟาร์ม</td></tr>';
+                    }
+                })
+                .catch(err => console.error('Error fetching cattles:', err));
+        }
+
+        function renderCattlesTable() {
+            const tbody = document.getElementById('farm-cattles-tbody');
+            const searchVal = (document.getElementById('cattle-search-input')?.value || '').toLowerCase().trim();
+
+            const filtered = allCattlesList.filter(c => {
+                if (!searchVal) return true;
+                const haystack = [
+                    c.tag_number,
+                    c.seller_name,
+                    c.seller_phone,
+                    c.breed,
+                    c.gender,
+                    c.notes
+                ].filter(Boolean).join(' ').toLowerCase();
+                return haystack.includes(searchVal);
+            });
+
+            if (filtered.length > 0) {
+                tbody.innerHTML = '';
+                filtered.forEach(cattle => {
+                    let statusBadge = cattle.status === 'alive' 
+                        ? '<span class="badge bg-success">อยู่ในฟาร์ม</span>' 
+                        : '<span class="badge bg-secondary">ชำแหละแล้ว</span>';
+                        
+                    let hasImage = cattle.image_url && cattle.image_url !== 'null' && cattle.image_url.trim() !== '';
+                    let imgSrc = hasImage ? cattle.image_url : 'https://via.placeholder.com/50x50/e9ecef/6c757d?text=No+Img';
+                    let currentWeight = parseFloat(cattle.weight_kg || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="ps-3">
+                            <img src="${imgSrc}" class="rounded" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ddd;" onerror="this.src='https://via.placeholder.com/50x50/e9ecef/6c757d?text=Error'">
+                        </td>
+                        <td class="fw-bold text-primary-custom">${cattle.tag_number}</td>
+                        <td>${currentWeight} กก.</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="openViewCattleModal(${cattle.id})">
+                                <i class="fas fa-file-invoice-dollar me-1"></i> ข้อมูลการรับซื้อโคเนื้อ
+                            </button>
+                        </td>
+                        <td class="text-center pe-3">
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteCattle(${cattle.id}, '${cattle.tag_number}')">
+                                <i class="fas fa-trash-alt me-1"></i> ลบ
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลโคเนื้อในฟาร์ม</td></tr>';
+            }
+        }
+
+        function confirmDeleteCattle(id, tagNumber) {
+            if (!confirm(`คุณต้องการลบโคเนื้อรหัส ${tagNumber} ตัวนี้ใช่หรือไม่?`)) return;
+
+            const fd = new FormData();
+            fd.append('id', id);
+
+            fetch('api/admin.php?action=delete_cattle', { method: 'POST', body: fd })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        fetchCattles();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(err => console.error('Error deleting cattle:', err));
+        }
+
+        function openViewCattleModal(id) {
+            const cattle = cattleMap[id];
+            if (!cattle) return;
+
+            let hasImage = cattle.image_url && cattle.image_url !== 'null' && cattle.image_url.trim() !== '';
+            let imgHtml = hasImage
+                ? `<div class="text-center mb-3"><img src="${cattle.image_url}" class="img-fluid rounded border" style="max-height: 220px; object-fit: cover;"></div>`
+                : '';
+            let estWeight = parseFloat(cattle.base_weight_kg || cattle.initial_weight_kg || cattle.weight_kg || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            let costPrice = parseFloat(cattle.cost_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            let statusBadge = cattle.status === 'alive' 
+                ? '<span class="badge bg-success">อยู่ในฟาร์ม</span>' 
+                : '<span class="badge bg-secondary">ชำแหละแล้ว</span>';
+
+            document.getElementById('viewCattleModalBody').innerHTML = `
+                ${imgHtml}
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">รหัสประจำตัวโค (Cattle ID):</span>
+                        <span class="fw-bold text-primary-custom">${cattle.tag_number}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">ชื่อเกษตรกร / แหล่งที่มา:</span>
+                        <span class="fw-semibold">${cattle.seller_name || '-'}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">เบอร์ติดต่อเกษตรกร:</span>
+                        <span>${cattle.seller_phone || '-'}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">สายพันธุ์:</span>
+                        <span>${cattle.breed || '-'}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">เพศ:</span>
+                        <span>${cattle.gender || 'ผู้'}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">น้ำหนักประเมิน (กก.):</span>
+                        <span>${estWeight} กก.</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">ต้นทุน / ราคาประเมิน (บาท):</span>
+                        <span class="fw-bold text-danger">฿${costPrice}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">วันที่รับซื้อ:</span>
+                        <span>${formatDate(cattle.purchased_at)}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">หมายเหตุเพิ่มเติม:</span>
+                        <span>${cattle.notes || '-'}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">สถานะ:</span>
+                        <span>${statusBadge}</span>
+                    </div>
+                </div>
+            `;
+            viewCattleModal.show();
+        }
+
+        function populateSelects(cattles) {
+            const growthSelect = document.getElementById('growth-cattle-select');
+            const healthSelect = document.getElementById('health-cattle-select');
+            
+            if (growthSelect && healthSelect) {
+                let options = '<option selected disabled value="">กรุณาเลือกโคเนื้อ...</option>';
+                cattles.filter(c => c.status === 'alive').forEach(c => {
+                    cattleMap[c.id] = c;
+                    options += `<option value="${c.id}">${c.tag_number} (${c.breed})</option>`;
+                });
+                growthSelect.innerHTML = options;
+                healthSelect.innerHTML = options;
+            }
+        }
+
+        // --- Growth Tracking ---
+        function submitGrowth() {
+            const cid = document.getElementById('growth-cattle-select').value;
+            const date = document.getElementById('growth-date').value;
+            const weight = document.getElementById('growth-weight').value;
+            
+            if(!cid || !date || !weight) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return;
+            }
+            
+            const fd = new FormData();
+            fd.append('cattle_id', cid);
+            fd.append('measured_at', date);
+            fd.append('weight', weight);
+            
+            fetch('api/admin.php?action=add_growth', { method: 'POST', body: fd })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        document.getElementById('growth-weight').value = '';
+                        fetchCattles();
+                        fetchGrowth();
+                    } else { alert('Error: ' + data.message); }
+                });
+        }
+
+        function fetchGrowth() {
+            const cid = document.getElementById('growth-cattle-select').value;
+            if(!cid) return;
+            
+            fetch('api/admin.php?action=get_growth&cattle_id=' + cid)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('growth-tbody');
+                    if(data.status === 'success' && data.data.length > 0) {
+                        tbody.innerHTML = '';
+                        let prevWeight = 0;
+                        
+                        // Because data is ASC, we can calculate differences sequentially
+                        data.data.forEach((row, index) => {
+                            let diff = 0;
+                            if (index === 0) {
+                                // First record diff against base cost weight if available
+                                let base = parseFloat(cattleMap[cid].base_weight_kg || cattleMap[cid].weight_kg);
+                                diff = parseFloat(row.weight_kg) - base;
+                            } else {
+                                diff = parseFloat(row.weight_kg) - prevWeight;
+                            }
+                            prevWeight = parseFloat(row.weight_kg);
+                            
+                            let diffHtml = '';
+                            if (diff > 0) {
+                                diffHtml = `<span class="text-success">+${diff.toFixed(2)}</span>`;
+                            } else {
+                                diffHtml = ``; // Leave blank if weight decreased or didn't change
+                            }
+                                
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${formatDate(row.measured_at)}</td>
+                                <td>${parseFloat(row.weight_kg).toFixed(2)}</td>
+                                <td>${diffHtml}</td>
+                                <td>แอดมิน</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">ไม่มีประวัติการชั่งน้ำหนัก</td></tr>';
+                    }
+                });
+        }
+        
+        function formatDate(dateStr) {
+            if(!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if(parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        // --- Health Records ---
+        function submitHealth() {
+            const cid = document.getElementById('health-cattle-select').value;
+            const type = document.getElementById('health-type').value;
+            const date = document.getElementById('health-date').value;
+            
+            if(!cid || !date) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return;
+            }
+            
+            const fd = new FormData();
+            fd.append('cattle_id', cid);
+            fd.append('type', type);
+            fd.append('date', date);
+            fd.append('details', '-'); // Send a dash to backend for the details field
+            
+            fetch('api/admin.php?action=add_health', { method: 'POST', body: fd })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        fetchHealth();
+                    } else { alert('Error: ' + data.message); }
+                });
+        }
+
+        function fetchHealth() {
+            const cid = document.getElementById('health-cattle-select').value;
+            if(!cid) return;
+            
+            fetch('api/admin.php?action=get_health&cattle_id=' + cid)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('health-tbody');
+                    if(data.status === 'success' && data.data.length > 0) {
+                        tbody.innerHTML = '';
+                        data.data.forEach(row => {
+                            let typeBadge = '';
+                            if(row.record_type === 'ฉีดวัคซีน') typeBadge = 'bg-info text-dark';
+                            else if(row.record_type === 'ถ่ายพยาธิ') typeBadge = 'bg-warning text-dark';
+                            else typeBadge = 'bg-danger';
+                            
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="ps-3">${formatDate(row.record_date)}</td>
+                                <td>${cattleMap[cid] ? cattleMap[cid].tag_number : cid}</td>
+                                <td><span class="badge ${typeBadge}">${row.record_type}</span></td>
+
+                                <td>แอดมิน</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">ไม่มีประวัติสุขภาพ</td></tr>';
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
