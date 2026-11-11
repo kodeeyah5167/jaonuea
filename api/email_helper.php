@@ -106,60 +106,6 @@ function sendEmailNotification($recipient_email, $customer_name, $message_conten
 }
 
 /**
- * ตัวอย่างการนำไปใช้งานจริงร่วมกับฐานข้อมูล (Database Logic & Integration)
- * นำฟังก์ชันนี้ไปเรียกใช้ในไฟล์ทำรายการ เช่น api/checkout.php หรือหน้าอัปเดตสถานะออเดอร์ของแอดมิน
- */
-function notifyCustomerViaEmail($db_connection, $order_id)
-{
-    try {
-        // 1. ดึงข้อมูลอีเมลและชื่อของลูกค้า จากตาราง users โดยเชื่อมผ่านคำสั่งซื้อ (orders)
-        $query = "
-            SELECT u.first_name, u.email 
-            FROM orders o
-            JOIN users u ON o.user_id = u.id
-            WHERE o.id = :order_id
-            LIMIT 1
-        ";
-
-        $stmt = $db_connection->prepare($query);
-        $stmt->bindParam(':order_id', $order_id, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $customer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($customer) {
-            $customer_email = $customer['email'];
-            $customer_name = $customer['first_name'];
-
-            // 2. ตรวจสอบว่าลูกค้ามีอีเมลในระบบหรือไม่
-            if (!empty($customer_email)) {
-
-                // 3. เตรียมเนื้อหาอีเมล (สามารถใส่ HTML Tag พื้นฐานได้)
-                $order_ref = "ORD-" . str_pad($order_id, 5, '0', STR_PAD_LEFT);
-                $message_content = "
-                    <h3 style='margin-top:0; color:#333;'><i class='fas fa-check-circle'></i> ยืนยันคำสั่งซื้อ #{$order_ref}</h3>
-                    <p>คำสั่งซื้อของคุณได้รับการเข้าสู่ระบบเรียบร้อยแล้ว ขณะนี้ทางร้านกำลังดำเนินการตรวจสอบและจัดเตรียมสินค้า</p>
-                    <p style='margin-bottom:0;'>คุณสามารถตรวจสอบสถานะคำสั่งซื้อหรือดูรายละเอียดเพิ่มเติมได้ที่หน้าเว็บไซต์ในเมนู <strong>'โปรไฟล์ส่วนตัว'</strong> ครับ</p>
-                ";
-
-                // 4. เรียกใช้งานฟังก์ชันส่งอีเมล
-                $send_result = sendEmailNotification($customer_email, $customer_name, $message_content);
-
-                if ($send_result) {
-                    return true; // ส่งสำเร็จ
-                } else {
-                    return false; // ส่งไม่สำเร็จ (ข้อผิดพลาดจะถูกบันทึกใน PHP error_log)
-                }
-            }
-        }
-        return false; // ไม่มีข้อมูลลูกค้าหรือไม่มีอีเมล
-    } catch (PDOException $e) {
-        error_log("Database Error in notifyCustomerViaEmail: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
  * ฟังก์ชันสำหรับส่งอีเมลรีเซ็ตรหัสผ่าน (Email Routing) พร้อมแนบลิงก์ Token และรหัส Token
  *
  * @param string $recipient_email อีเมลของลูกค้า

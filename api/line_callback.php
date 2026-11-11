@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once '../config/database.php';
-require_once __DIR__ . '/line_api_helper.php';
 
 // --- CONFIGURATION ---
 // นำ Channel ID และ Channel Secret จาก LINE Developers Console มาใส่ที่นี่
@@ -94,12 +93,11 @@ try { $db->exec("ALTER TABLE users ADD COLUMN line_name VARCHAR(150) NULL AFTER 
 
 $raw_state = $_GET['state'] ?? 'login123';
 $is_register = (strpos($raw_state, 'register') === 0);
-$is_forgot = (strpos($raw_state, 'forgot') === 0);
 $custom_redirect = '';
 if (strpos($raw_state, '__') !== false) {
     $parts = explode('__', $raw_state, 2);
     $custom_redirect = $parts[1] ?? '';
-} elseif (!in_array($raw_state, ['login123', 'register123', 'forgot123'])) {
+} elseif (!in_array($raw_state, ['login123', 'register123'])) {
     $custom_redirect = $raw_state;
 }
 
@@ -111,49 +109,6 @@ try {
         ':email' => $email,
         ':provider_id' => $provider_id
     ]);
-
-    // กรณีกดขอรีเซ็ตรหัสผ่านผ่าน LINE (LINE Routing)
-    if ($is_forgot) {
-        if ($stmt->rowCount() === 0) {
-            header("Location: ../login.html?auth_error=not_found&mode=register&email=" . urlencode($email));
-            exit();
-        }
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // บันทึกค่า LINE User ID (UID) ลง provider_id เสมอเพื่อใช้ส่งข้อความผ่าน LINE Messaging API
-        $reset_token = bin2hex(random_bytes(32));
-        $token_code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
-
-        $upd_stmt = $db->prepare("
-            UPDATE users 
-            SET provider_id = :provider_id,
-                reset_token = :token,
-                reset_token_code = :code,
-                reset_token_expires_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE)
-            WHERE id = :id
-        ");
-        $upd_stmt->execute([
-            ':provider_id' => $provider_id,
-            ':token' => $reset_token,
-            ':code' => $token_code,
-            ':id' => $user['id']
-        ]);
-
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $basePath = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
-        $reset_link = "{$protocol}://{$host}{$basePath}/login.html?reset_token=" . urlencode($reset_token);
-
-        $customer_name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
-        if ($customer_name === '') {
-            $customer_name = !empty($name) ? $name : ($user['username'] ?? 'ลูกค้า');
-        }
-
-        sendLineResetPasswordNotification($provider_id, $customer_name, $reset_link, $token_code);
-
-        header("Location: ../login.html?forgot_sent=line&reset_email=" . urlencode($user['email']));
-        exit();
-    }
 
     if ($stmt->rowCount() > 0) {
         // กรณีมีบัญชีในระบบอยู่แล้ว แต่ลูกค้ากดจากหน้า "สมัครสมาชิก" (สมัครซ้ำด้วยบัญชีเดิม)

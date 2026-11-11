@@ -477,8 +477,6 @@
             const targetMode = urlParams.get('mode');
             const setupProfile = urlParams.get('setup_profile');
             const resetTokenParam = urlParams.get('reset_token');
-            const forgotSentParam = urlParams.get('forgot_sent');
-            const resetEmailParam = urlParams.get('reset_email') || '';
 
             if (targetMode === 'register') {
                 toggleAuth('register', true);

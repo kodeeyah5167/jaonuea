@@ -50,8 +50,6 @@ try {
                 echo json_encode(['status' => 'error', 'message' => 'Please login first']);
                 exit();
             }
-            require_once 'auto_cancel.php';
-            auto_cancel_expired_orders($db);
             $user_id = $_SESSION['user_id'];
             
             // Auto-migrate: Ensure columns exist
@@ -132,7 +130,7 @@ try {
                 FROM orders o
                 LEFT JOIN payments p ON o.id = p.order_id
                 WHERE o.user_id = ? 
-                ORDER BY o.created_at ASC, o.id ASC
+                ORDER BY o.id DESC, o.created_at DESC
             ");
             $stmtOrders->execute([$user_id]);
             $orders = $stmtOrders->fetchAll(PDO::FETCH_ASSOC);

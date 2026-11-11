@@ -1,17 +1,9 @@
 <?php
 session_start();
 require_once '../config/database.php';
-require_once 'auto_cancel.php';
 require_once 'notification_helper.php';
 
 header('Content-Type: application/json');
-
-// Check if user is logged in (you could add role checks here)
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    // For local dev, we might bypass this, but let's keep it secure if possible
-    // echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    // exit;
-}
 
 try {
     $database = new Database();
@@ -358,14 +350,11 @@ try {
         // 2. Orders Management
         // ==========================================
         case 'get_orders':
-            // Run auto-cancel logic lazily
-            auto_cancel_expired_orders($db);
-
             $stmt = $db->query("
                 SELECT o.*, u.username, u.first_name, u.last_name, u.phone
                 FROM orders o 
                 JOIN users u ON o.user_id = u.id 
-                ORDER BY o.created_at ASC, o.id ASC
+                ORDER BY o.id DESC, o.created_at DESC
             ");
             $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($orders as &$ord) {
@@ -433,26 +422,6 @@ try {
                 'items' => $items,
                 'payment' => $payment
             ]);
-            break;
-
-        case 'update_delivery_date':
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') throw new Exception("Invalid request method");
-            $order_id = $_POST['order_id'] ?? '';
-            $delivery_date = trim($_POST['delivery_date'] ?? '');
-            if (empty($order_id) || empty($delivery_date)) throw new Exception("ข้อมูลไม่ครบถ้วน");
-
-            if (strpos($delivery_date, '/') !== false) {
-                $p = explode('/', $delivery_date);
-                if (count($p) === 3) {
-                    $year = intval($p[2]);
-                    if ($year > 2400) $year -= 543;
-                    if ($year < 100) $year += 2000;
-                    $delivery_date = sprintf('%04d-%02d-%02d', $year, intval($p[1]), intval($p[0]));
-                }
-            }
-            $stmt = $db->prepare("UPDATE orders SET delivery_date = ? WHERE id = ?");
-            $stmt->execute([$delivery_date, $order_id]);
-            echo json_encode(['status' => 'success', 'message' => 'อัปเดตวันที่สำเร็จ', 'delivery_date' => $delivery_date]);
             break;
 
         case 'update_order':

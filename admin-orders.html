@@ -417,7 +417,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        allOrdersData = data.data || [];
+                        allOrdersData = (data.data || []).sort((a, b) => Number(b.id) - Number(a.id));
                         renderOrders();
                     } else {
                         document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่สามารถโหลดข้อมูลได้</td></tr>';
@@ -672,34 +672,6 @@
                 raw: raw,
                 iso: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
             };
-        }
-
-        function adminEditDeliveryDate(orderId, currentDate) {
-            let newDate = prompt('กรุณาระบุวันที่จัดส่ง/รับสินค้าใหม่ (วัน/เดือน/ปี เช่น 04/11/2026):', currentDate);
-            if (!newDate || newDate.trim() === '' || newDate.trim() === currentDate) return;
-
-            let formData = new FormData();
-            formData.append('action', 'update_delivery_date');
-            formData.append('order_id', orderId);
-            formData.append('delivery_date', newDate.trim());
-
-            fetch('api/admin.php', {
-                method: 'POST',
-                body: formData
-            })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.status === 'success') {
-                        alert('อัปเดตวันที่สำเร็จ');
-                        loadOrders();
-                        viewOrder(orderId);
-                    } else {
-                        alert('เกิดข้อผิดพลาด: ' + (res.message || 'ไม่สามารถแก้ไขได้'));
-                    }
-                })
-                .catch(err => {
-                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-                });
         }
 
         function escapeHtml(text) {

@@ -4,7 +4,6 @@
 session_start();
 require_once '../config/database.php';
 require_once __DIR__ . '/email_helper.php';
-require_once __DIR__ . '/line_api_helper.php';
 
 header("Content-Type: application/json; charset=UTF-8");
 
