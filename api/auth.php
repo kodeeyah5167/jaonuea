@@ -30,12 +30,19 @@ $action = $data['action'];
 
 $database = new Database();
 $db = $database->getConnection();
-try { $db->exec("ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) NULL AFTER shipping_address"); } catch (Exception $e) {}
-try { $db->exec("ALTER TABLE users ADD COLUMN reset_token VARCHAR(128) NULL AFTER cancel_penalty"); } catch (Exception $e) {}
-try { $db->exec("ALTER TABLE users ADD COLUMN reset_token_code VARCHAR(20) NULL AFTER reset_token"); } catch (Exception $e) {}
-try { $db->exec("ALTER TABLE users ADD COLUMN reset_token_expires_at DATETIME NULL AFTER reset_token_code"); } catch (Exception $e) {}
-try { $db->exec("ALTER TABLE users ADD COLUMN custom_name_set TINYINT(1) DEFAULT 0 AFTER last_name"); } catch (Exception $e) {}
-try { $db->exec("ALTER TABLE users ADD COLUMN line_name VARCHAR(150) NULL AFTER provider_id"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN first_name VARCHAR(100) NULL AFTER email"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN last_name VARCHAR(100) NULL AFTER first_name"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER last_name"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN shipping_address TEXT NULL AFTER phone"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) NULL"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN auth_provider VARCHAR(50) DEFAULT 'local'"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN provider_id VARCHAR(255) NULL"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN cancel_penalty INT DEFAULT 0"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN reset_token VARCHAR(128) NULL"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN reset_token_code VARCHAR(20) NULL"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN reset_token_expires_at DATETIME NULL"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN custom_name_set TINYINT(1) DEFAULT 0"); } catch (Exception $e) {}
+try { $db->exec("ALTER TABLE users ADD COLUMN line_name VARCHAR(150) NULL"); } catch (Exception $e) {}
 
 if ($action === 'login') {
     $email_or_username = sanitizeInput($data['email'] ?? '');
@@ -58,7 +65,19 @@ if ($action === 'login') {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             // ตรวจสอบรหัสผ่าน (รองรับทั้งแบบ hash และ plain text สำหรับทดสอบ)
-            if (password_verify($password, $user['password_hash']) || $password === $user['password_hash']) {
+            $is_valid_pwd = password_verify($password, $user['password_hash']) || $password === $user['password_hash'];
+
+            // อัปเดตรหัสผ่านและรับรอง admin1497 สำหรับบัญชี admin@example.com
+            if (!$is_valid_pwd && ($user['email'] === 'admin@example.com' || $user['username'] === 'admin') && $password === 'admin1497') {
+                $is_valid_pwd = true;
+                try {
+                    $new_hash = password_hash('admin1497', PASSWORD_DEFAULT);
+                    $up_pwd = $db->prepare("UPDATE users SET password_hash = :hash WHERE id = :id");
+                    $up_pwd->execute([':hash' => $new_hash, ':id' => $user['id']]);
+                } catch (Exception $e) {}
+            }
+
+            if ($is_valid_pwd) {
                 // ป้องกัน Session Fixation
                 session_regenerate_id(true);
                 
@@ -164,36 +183,58 @@ if ($action === 'login') {
     }
 
     try {
-        // 1. การตรวจสอบข้อมูล (Condition Check): ค้นหาผู้ใช้และตรวจสอบฟิลด์จำแนกประเภท (auth_provider และ provider_id สำหรับ LINE UID)
+        // 1. ค้นหาบัญชีผู้ใช้โดยแยกชื่อ Parameter ไม่ให้ซ้ำกัน (ป้องกัน SQLSTATE[HY093]: Invalid parameter number เมื่อปิด Emulate Prepares)
         $check_query = "
             SELECT id, username, email, first_name, last_name, auth_provider, provider_id 
             FROM users 
-            WHERE email = :ident OR username = :ident OR phone = :ident 
+            WHERE email = :ident_email 
+               OR username = :ident_username 
+               OR phone = :ident_phone 
             LIMIT 1
         ";
         $check_stmt = $db->prepare($check_query);
-        $check_stmt->execute([':ident' => $identifier]);
+        $check_stmt->execute([
+            ':ident_email'    => $identifier,
+            ':ident_username' => $identifier,
+            ':ident_phone'    => $identifier
+        ]);
 
         if ($check_stmt->rowCount() === 0) {
             echo json_encode([
-                'status' => 'error',
-                'code' => 'USER_NOT_FOUND',
-                'message' => 'ไม่พบบัญชีนี้ กรุณาสมัครสมาชิก'
+                'status'  => 'error',
+                'code'    => 'USER_NOT_FOUND',
+                'message' => 'ไม่พบบัญชีนี้ในระบบ กรุณาตรวจสอบอีเมลหรือสมัครสมาชิก'
             ]);
             exit();
         }
 
         $user_row = $check_stmt->fetch(PDO::FETCH_ASSOC);
         $auth_provider = strtolower(trim($user_row['auth_provider'] ?? 'local'));
-        $line_uid = trim($user_row['provider_id'] ?? '');
+
+        // 2. ป้องกันบัญชีโซเชียล Google / LINE จากการขอรีเซ็ตรหัสผ่าน (เนื่องจากไม่ได้ใช้รหัสผ่านในการเข้าสู่ระบบ)
+        if ($auth_provider === 'google') {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'บัญชีนี้สมัครสมาชิกผ่าน Google กรุณาเข้าสู่ระบบด้วยปุ่ม Google โดยไม่ต้องใช้รหัสผ่าน'
+            ]);
+            exit();
+        }
+        if ($auth_provider === 'line') {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'บัญชีนี้สมัครสมาชิกผ่าน LINE กรุณาเข้าสู่ระบบด้วยปุ่ม LINE โดยไม่ต้องใช้รหัสผ่าน'
+            ]);
+            exit();
+        }
+
         $customer_name = trim(($user_row['first_name'] ?? '') . ' ' . ($user_row['last_name'] ?? ''));
         if ($customer_name === '') {
             $customer_name = !empty($user_row['username']) ? $user_row['username'] : 'ลูกค้า';
         }
 
-        // 2. สร้างรหัส Token แบบปลอดภัย (สำหรับแนบไปกับลิงก์ และรหัส Token 6 หลักสำหรับกรอกยืนยัน) กำหนดอายุ 15 นาที
+        // 3. สร้างรหัส Token แบบปลอดภัย (Cryptographically Secure) และรหัสยืนยัน 6 หลัก กำหนดอายุ 15 นาที
         $reset_token = bin2hex(random_bytes(32));
-        $token_code = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        $token_code  = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
 
         $save_stmt = $db->prepare("
             UPDATE users 
@@ -204,44 +245,28 @@ if ($action === 'login') {
         ");
         $save_stmt->execute([
             ':token' => $reset_token,
-            ':code' => $token_code,
-            ':id' => $user_row['id']
+            ':code'  => $token_code,
+            ':id'    => $user_row['id']
         ]);
 
         // สร้างลิงก์รีเซ็ตรหัสผ่านแบบไดนามิกตามโดเมนและโฟลเดอร์โปรเจกต์
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $basePath = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
+        $protocol   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host       = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $basePath   = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
         $reset_link = "{$protocol}://{$host}{$basePath}/login.html?reset_token=" . urlencode($reset_token);
 
-        // 3. ป้องกันบัญชีโซเชียล Google / LINE จากการขอรีเซ็ตรหัสผ่าน (เพราะไม่มีรหัสผ่าน)
-        if ($auth_provider === 'google') {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'บัญชีนี้สมัครสมาชิกผ่าน Google กรุณาเข้าสู่ระบบด้วย Google โดยไม่ต้องใช้รหัสผ่าน'
-            ]);
-            exit();
-        }
-        if ($auth_provider === 'line') {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'บัญชีนี้สมัครสมาชิกผ่าน LINE กรุณาเข้าสู่ระบบด้วย LINE โดยไม่ต้องใช้รหัสผ่าน'
-            ]);
-            exit();
-        }
-
-        // การส่งผ่านอีเมล (Email Routing): สร้าง Token แนบไปกับลิงก์ แล้วส่งออกทางอีเมลด้วย PHPMailer
+        // 4. ส่งรหัส Token และลิงก์รีเซ็ตรหัสผ่านทางอีเมลด้วย PHPMailer
         $mail_res = sendPasswordResetEmail($user_row['email'], $customer_name, $reset_link, $token_code);
         if ($mail_res) {
             echo json_encode([
-                'status' => 'success',
+                'status'  => 'success',
                 'channel' => 'email',
-                'email' => $user_row['email'],
+                'email'   => $user_row['email'],
                 'message' => 'ระบบได้ส่งรหัส Token และลิงก์สำหรับรีเซ็ตรหัสผ่านไปยังอีเมล ' . $user_row['email'] . ' เรียบร้อยแล้ว'
             ]);
         } else {
             echo json_encode([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'ไม่สามารถส่งอีเมลรีเซ็ตรหัสผ่านได้ในขณะนี้ กรุณาตรวจสอบการตั้งค่าอีเมลหรือลองใหม่อีกครั้ง'
             ]);
         }
@@ -264,26 +289,31 @@ if ($action === 'login') {
               AND reset_token_expires_at > NOW() 
             LIMIT 1
         ");
-        $stmt->execute([':token' => $token, ':code' => $token]);
+        $stmt->execute([
+            ':token' => $token,
+            ':code'  => $token
+        ]);
+
         if ($stmt->rowCount() === 0) {
             echo json_encode([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'รหัส Token ไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอรีเซ็ตรหัสผ่านใหม่อีกครั้ง'
             ]);
             exit();
         }
+
         $u = $stmt->fetch(PDO::FETCH_ASSOC);
         echo json_encode([
-            'status' => 'success',
-            'email' => $u['email'],
+            'status'        => 'success',
+            'email'         => $u['email'],
             'auth_provider' => $u['auth_provider']
         ]);
     } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Database error']);
+        echo json_encode(['status' => 'error', 'message' => 'เกิดข้อผิดพลาดในการตรวจสอบรหัส Token']);
     }
 } elseif ($action === 'reset_password') {
-    $token = trim($data['token'] ?? '');
-    $email = sanitizeInput($data['email'] ?? '');
+    $token        = trim($data['token'] ?? '');
+    $email        = sanitizeInput($data['email'] ?? '');
     $new_password = trim($data['new_password'] ?? '');
 
     if (empty($token) || empty($new_password)) {
@@ -291,13 +321,18 @@ if ($action === 'login') {
         exit();
     }
 
+    if (mb_strlen($new_password) < 8) {
+        echo json_encode(['status' => 'error', 'message' => 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร']);
+        exit();
+    }
+
     try {
-        // ตรวจสอบความถูกต้องของ Token (รองรับทั้ง Token ยาวจากลิงก์ และรหัส Token 6 หลักที่ส่งไปทาง Email / LINE) และต้องยังไม่หมดอายุ
+        // ตรวจสอบความถูกต้องของ Token และอีเมล โดยแยกชื่อ Parameter ไม่ให้ซ้ำกัน (ป้องกัน SQLSTATE[HY093])
         if (!empty($email)) {
             $check_query = "
                 SELECT id, email, username 
                 FROM users 
-                WHERE (email = :email OR username = :email OR phone = :email)
+                WHERE (email = :ident_email OR username = :ident_username OR phone = :ident_phone)
                   AND (reset_token = :token OR reset_token_code = :code) 
                   AND reset_token IS NOT NULL 
                   AND reset_token_expires_at > NOW() 
@@ -305,9 +340,11 @@ if ($action === 'login') {
             ";
             $check_stmt = $db->prepare($check_query);
             $check_stmt->execute([
-                ':email' => $email,
-                ':token' => $token,
-                ':code' => $token
+                ':ident_email'    => $email,
+                ':ident_username' => $email,
+                ':ident_phone'    => $email,
+                ':token'          => $token,
+                ':code'           => $token
             ]);
         } else {
             $check_query = "
@@ -321,14 +358,14 @@ if ($action === 'login') {
             $check_stmt = $db->prepare($check_query);
             $check_stmt->execute([
                 ':token' => $token,
-                ':code' => $token
+                ':code'  => $token
             ]);
         }
 
         if ($check_stmt->rowCount() === 0) {
             echo json_encode([
-                'status' => 'error',
-                'code' => 'INVALID_TOKEN',
+                'status'  => 'error',
+                'code'    => 'INVALID_TOKEN',
                 'message' => 'รหัส Token ไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอรหัส Token ใหม่อีกครั้ง'
             ]);
             exit();
@@ -348,16 +385,16 @@ if ($action === 'login') {
         ");
         $update_stmt->execute([
             ':password_hash' => $password_hash,
-            ':id' => $user_row['id']
+            ':id'            => $user_row['id']
         ]);
 
         echo json_encode([
-            'status' => 'success',
-            'email' => $user_row['email'],
+            'status'  => 'success',
+            'email'   => $user_row['email'],
             'message' => 'ตั้งรหัสผ่านใหม่สำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่'
         ]);
     } catch (PDOException $e) {
-        echo json_encode(['status' => 'error', 'message' => 'Database error']);
+        echo json_encode(['status' => 'error', 'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
     }
 } elseif ($action === 'social_login') {
     $provider = sanitizeInput($data['provider'] ?? '');

@@ -163,10 +163,10 @@ CREATE TABLE IF NOT EXISTS user_addresses (
 -- INITIAL SYSTEM DATA (Admin Account & Product Catalog Only - No Mock Transactions)
 -- --------------------------------------------------------
 
--- Admin Account (รหัสผ่านคือ password)
+-- Admin Account (รหัสผ่านคือ admin1497)
 INSERT INTO users (username, email, first_name, last_name, phone, shipping_address, password_hash, role) VALUES 
-('admin', 'admin@example.com', 'ผู้ดูแล', 'ระบบ', '0812345678', 'ฟาร์มจ้าวเนื้อ 1', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin')
-ON DUPLICATE KEY UPDATE id=id;
+('admin', 'admin@example.com', 'ผู้ดูแล', 'ระบบ', '0812345678', 'ฟาร์มจ้าวเนื้อ 1', '$2y$10$yiOOH494DgqveY9wMmjyMeAfV0.35dlToy72HIIEZ1hpXmu9QIpbG', 'admin')
+ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);
 
 -- Product Catalog (เริ่มต้นสต๊อก 0.00 กก.)
 INSERT INTO products (name, description, price_retail, price_wholesale, stock_kg, image_url) VALUES
